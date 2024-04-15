@@ -1,4 +1,4 @@
-module github.com/ankorstore/yokai-http-template
+module github.com/ankorstore/yokai-petstore-demo
 
 go 1.22
 
