@@ -31,7 +31,7 @@ This demo is following the [recommended project layout](https://go.dev/doc/modul
 - `configs/`: configuration files
 - `db/`
   - `migrations/`: SQL migrations files for gomigrate
-  - `queries/`: SQL queries files for sqlc
+  - `queries/`: SQL queries files for sqlc stubs generation
   - `sqlc/`: sqlc generated stubs
 - `internal/`:
   - `handler/`: HTTP handlers
@@ -52,7 +52,7 @@ make up              # start the docker compose stack
 make down            # stop the docker compose stack
 make logs            # stream the docker compose stack logs
 make fresh           # refresh the docker compose stack
-make sqlc            # generate sqlc stubs
+make sqlc            # regenerate sqlc stubs
 make migrate-create  # create migration
 make migrate-up      # apply all migrations 
 make migrate-down    # revert all migrations 
