@@ -7,6 +7,7 @@ import (
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook"
 	"github.com/ankorstore/yokai/trace"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
@@ -41,13 +42,14 @@ func (h *TraceHook) After(ctx context.Context, event *hook.HookEvent) {
 	if !span.IsRecording() {
 		return
 	}
-	defer span.End()
 
-	attributes := []attribute.KeyValue{
-		semconv.DBStatementKey.String(event.Query()),
+	code := codes.Ok
+	if event.Error() != nil {
+		span.RecordError(event.Error())
+		code = codes.Error
 	}
-
-	span.SetAttributes(attributes...)
+	span.SetStatus(code, code.String())
+	span.End()
 }
 
 func (h *TraceHook) eventAttributes(event *hook.HookEvent) []attribute.KeyValue {
