@@ -16,6 +16,7 @@ WORKDIR /
 # Uncomment if you application provides HTTP templates
 # COPY --from=build /src/templates /templates
 COPY --from=build /src/configs /configs
+COPY --from=build /src/db /db
 COPY --from=build /app /app
 
 ENTRYPOINT ["/app"]

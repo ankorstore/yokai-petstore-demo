@@ -1,0 +1,8 @@
+package: api
+generate:
+  client: true
+  echo-server: true
+  strict-server: true
+  embedded-spec: true
+  models: true
+output: api.gen.go

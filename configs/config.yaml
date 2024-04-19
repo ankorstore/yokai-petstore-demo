@@ -45,6 +45,9 @@ modules:
   http:
     server:
       address: ":8080"
+      errors:
+        obfuscate: true
+        stack: true
       trace:
         enabled: true
       metrics:
@@ -53,9 +56,15 @@ modules:
         normalize:
           request_path: true
           response_status: true
+  database:
+    driver: mysql
+    dsn: ${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:${MYSQL_PORT})/${MYSQL_DATABASE}?parseTime=true
+    migrations: db/migrations
   log:
     level: info
     output: stdout
   trace:
     processor:
-      type: noop
+      type: otlp-grpc
+      options:
+        host: ${OTLP_COLLECTOR_HOST}:${OTLP_COLLECTOR_PORT}

@@ -1,3 +1,5 @@
+
+
 up:
 	@if [ ! -f .env ]; then \
         cp .env.example .env; \
@@ -24,6 +26,17 @@ test:
 lint:
 	golangci-lint run -v
 
-rename:
-	find . -type f ! -path "./.git/*" ! -path "./build/*" ! -path "./Makefile" -exec sed -i.bak -e "s|github.com/ankorstore/yokai-http-template|github.com/$(to)|g" {} \;
-	find . -type f -name "*.bak" -delete
+migrate-create:
+	docker run -v ./db/migrations:/migrations migrate/migrate create -ext sql -dir migrations -seq $(filter-out $@,$(MAKECMDGOALS))
+
+migrate-up:
+	docker compose exec petstore-demo-server go run . migrate up
+
+migrate-down:
+	docker compose exec petstore-demo-server go run . migrate down
+
+sqlc:
+	docker run --rm -v ./:/src -w /src sqlc/sqlc $(filter-out $@,$(MAKECMDGOALS))
+
+%:
+    @:

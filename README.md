@@ -1,88 +1,89 @@
-# Yokai HTTP Template
+# Yokai Petstore Demo
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Go version](https://img.shields.io/badge/Go-1.22-blue)](https://go.dev/)
 
-> HTTP application template based on the [Yokai](https://github.com/ankorstore/yokai) Go framework.
+> HTTP application demo based on the [Yokai](https://github.com/ankorstore/yokai) Go framework.
 
 <!-- TOC -->
-* [Documentation](#documentation)
 * [Overview](#overview)
   * [Layout](#layout)
   * [Makefile](#makefile)
-* [Getting started](#getting-started)
-  * [Installation](#installation)
-    * [With GitHub](#with-github)
-    * [With gonew](#with-gonew)
-  * [Usage](#usage)
+* [Usage](#usage)
 <!-- TOC -->
-
-## Documentation
-
-For more information about the [Yokai](https://github.com/ankorstore/yokai) framework, you can check its [documentation](https://ankorstore.github.io/yokai).
 
 ## Overview
 
-This template provides:
+This demo provides a REST API example, with:
 
-- a ready to extend [Yokai](https://github.com/ankorstore/yokai) application, with the [HTTP server](https://ankorstore.github.io/yokai/modules/fxhttpserver/) module installed
-- a ready to use [dev environment](docker-compose.yaml), based on [Air](https://github.com/cosmtrek/air) (for live reloading)
-- a ready to use [Dockerfile](Dockerfile) for production
-- some examples of [handler](internal/handler/example.go) and [test](internal/handler/example_test.go) to get started
+- a [Yokai](https://github.com/ankorstore/yokai) application container (with [Air](https://github.com/cosmtrek/air)):
+  - with the [HTTP server](https://ankorstore.github.io/yokai/modules/fxhttpserver/) module
+  - with a [fxdatabase](internal/module/fxdatabase) module, to provide `database/sql` + [gomigrate](https://github.com/golang-migrate/migrate)
+  - with a [fxsqlc](internal/module/fxsqlc) module,  to provide [sqlc](https://github.com/sqlc-dev/sqlc)
+- a [MySQL](https://www.mysql.com/) container for storage
+- a [Jaeger](https://www.jaegertracing.io/) container for tracing
 
 ### Layout
 
-This template is following the [recommended project layout](https://go.dev/doc/modules/layout#server-project):
+This demo is following the [recommended project layout](https://go.dev/doc/modules/layout#server-project):
 
 - `cmd/`: entry points
 - `configs/`: configuration files
+- `db/`
+  - `migrations/`: SQL migrations files for gomigrate
+  - `queries/`: SQL queries files for sqlc
+  - `sqlc/`: sqlc generated stubs
 - `internal/`:
-  - `handler/`: HTTP handler and test examples
+  - `handler/`: HTTP handlers
+  - `module/`: 
+    - `fxdatabase`: database/sql + gomigrate module
+    - `fxsqlc`: sqlc module
   - `bootstrap.go`: bootstrap
   - `register.go`: dependencies registration
   - `router.go`: routing registration
+- `sqlc.yaml`: sqlc configuration
 
 ### Makefile
 
 This template provides a [Makefile](Makefile):
 
 ```
-make up     # start the docker compose stack
-make down   # stop the docker compose stack
-make logs   # stream the docker compose stack logs
-make fresh  # refresh the docker compose stack
-make test   # run tests
-make lint   # run linter
+make up              # start the docker compose stack
+make down            # stop the docker compose stack
+make logs            # stream the docker compose stack logs
+make fresh           # refresh the docker compose stack
+make sqlc            # generate sqlc stubs
+make migrate-create  # create migration
+make migrate-up      # apply all migrations 
+make migrate-down    # revert all migrations 
+make test            # run tests
+make lint            # run linter
 ```
 
-## Getting started
+## Usage
 
-### Installation
-
-#### With GitHub
-
-You can create your repository [using the GitHub template](https://github.com/new?template_name=yokai-http-template&template_owner=ankorstore).
-
-It will automatically rename your project resources and push them, this operation can take a few minutes.
-
-Once ready, after cloning and going into your repository, simply run:
+Start the application with:
 
 ```shell
 make fresh
 ```
 
-#### With gonew
-
-You can install [gonew](https://go.dev/blog/gonew), and simply run:
+Then apply database migrations with:
 
 ```shell
-gonew github.com/ankorstore/yokai-petstore-demo github.com/foo/bar
-cd bar
-make fresh
+make migrate-up
 ```
-
-### Usage
 
 Once ready, the application will be available on:
 - [http://localhost:8080](http://localhost:8080) for the application HTTP server
 - [http://localhost:8081](http://localhost:8081) for the application core dashboard
+- [http://localhost:16686](http://localhost:16686) for the Jaeger dashboard
+
+Available endpoints on [http://localhost:8080](http://localhost:8080):
+
+| Route                   | Description     |
+|-------------------------|-----------------|
+| `[GET] /owners`         | List all owners |
+| `[POST] /owners`        | Create an owner |
+| `[GET] /owners/:id`     | Get an owner    |
+| `[DELETE] /gophers/:id` | Delete an owner |
