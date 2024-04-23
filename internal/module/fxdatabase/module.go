@@ -38,8 +38,8 @@ type FxDatabaseParam struct {
 
 func NewFxDatabase(p FxDatabaseParam) (*sql.DB, error) {
 	driver := NewDriver(&dri.MySQLDriver{}, []hook.Hook{
-		loghook.NewLogHook(),
 		tracehook.NewTraceHook(),
+		loghook.NewLogHook(),
 	})
 
 	driverName := fmt.Sprintf("yokai-%s", p.Config.GetString("modules.database.driver"))
