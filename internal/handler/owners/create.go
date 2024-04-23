@@ -2,10 +2,10 @@ package owners
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/ankorstore/yokai-petstore-demo/db/sqlc"
-	"github.com/ankorstore/yokai/config"
 	"github.com/labstack/echo/v4"
 )
 
@@ -15,14 +15,12 @@ type CreateOwnerParams struct {
 }
 
 type CreateOwnerHandler struct {
-	config  *config.Config
-	queries *sqlc.Queries
+	querier sqlc.Querier
 }
 
-func NewCreateOwnerHandler(config *config.Config, queries *sqlc.Queries) *CreateOwnerHandler {
+func NewCreateOwnerHandler(querier sqlc.Querier) *CreateOwnerHandler {
 	return &CreateOwnerHandler{
-		config:  config,
-		queries: queries,
+		querier: querier,
 	}
 }
 
@@ -32,10 +30,10 @@ func (h *CreateOwnerHandler) Handle() echo.HandlerFunc {
 
 		params := new(CreateOwnerParams)
 		if err := c.Bind(params); err != nil {
-			return c.String(http.StatusBadRequest, "bad request")
+			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid parameters: %v", err))
 		}
 
-		result, err := h.queries.CreateOwner(
+		result, err := h.querier.CreateOwner(
 			ctx,
 			sqlc.CreateOwnerParams{
 				Name: params.Name,
@@ -45,12 +43,12 @@ func (h *CreateOwnerHandler) Handle() echo.HandlerFunc {
 			return err
 		}
 
-		lastInsertId, err := result.LastInsertId()
+		ownerId, err := result.LastInsertId()
 		if err != nil {
 			return err
 		}
 
-		owner, err := h.queries.GetOwner(ctx, lastInsertId)
+		owner, err := h.querier.GetOwner(ctx, ownerId)
 		if err != nil {
 			return err
 		}

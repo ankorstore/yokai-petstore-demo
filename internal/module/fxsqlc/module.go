@@ -22,6 +22,6 @@ type FxSqlcQueriesParam struct {
 	Db *sql.DB
 }
 
-func NewFxSqlcQueries(p FxSqlcQueriesParam) *sqlc.Queries {
+func NewFxSqlcQueries(p FxSqlcQueriesParam) sqlc.Querier {
 	return sqlc.New(p.Db)
 }

@@ -19,8 +19,8 @@ INSERT INTO owners (
 `
 
 type CreateOwnerParams struct {
-	Name string
-	Bio  sql.NullString
+	Name string         `json:"name"`
+	Bio  sql.NullString `json:"bio"`
 }
 
 func (q *Queries) CreateOwner(ctx context.Context, arg CreateOwnerParams) (sql.Result, error) {
@@ -38,32 +38,61 @@ func (q *Queries) DeleteOwner(ctx context.Context, id int64) error {
 }
 
 const getOwner = `-- name: GetOwner :one
-SELECT id, name, bio FROM owners
-WHERE id = ? LIMIT 1
+SELECT o.id, o.name, o.bio, COUNT(p.id) AS total_pets FROM owners AS o
+LEFT JOIN pets AS p ON o.id = p.owner_id
+WHERE o.id = ?
+GROUP BY o.id, o.name, o.bio
+LIMIT 1
 `
 
-func (q *Queries) GetOwner(ctx context.Context, id int64) (Owner, error) {
+type GetOwnerRow struct {
+	ID        int64          `json:"id"`
+	Name      string         `json:"name"`
+	Bio       sql.NullString `json:"bio"`
+	TotalPets int64          `json:"total_pets"`
+}
+
+func (q *Queries) GetOwner(ctx context.Context, id int64) (GetOwnerRow, error) {
 	row := q.db.QueryRowContext(ctx, getOwner, id)
-	var i Owner
-	err := row.Scan(&i.ID, &i.Name, &i.Bio)
+	var i GetOwnerRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Bio,
+		&i.TotalPets,
+	)
 	return i, err
 }
 
 const listOwners = `-- name: ListOwners :many
-SELECT id, name, bio FROM owners
-ORDER BY name
+SELECT o.id, o.name, o.bio, COUNT(p.id) AS total_pets FROM owners AS o
+LEFT JOIN pets AS p ON o.id = p.owner_id
+GROUP BY o.id, o.name, o.bio
+ORDER BY o.id
 `
 
-func (q *Queries) ListOwners(ctx context.Context) ([]Owner, error) {
+type ListOwnersRow struct {
+	ID        int64          `json:"id"`
+	Name      string         `json:"name"`
+	Bio       sql.NullString `json:"bio"`
+	TotalPets int64          `json:"total_pets"`
+}
+
+func (q *Queries) ListOwners(ctx context.Context) ([]ListOwnersRow, error) {
 	rows, err := q.db.QueryContext(ctx, listOwners)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Owner
+	var items []ListOwnersRow
 	for rows.Next() {
-		var i Owner
-		if err := rows.Scan(&i.ID, &i.Name, &i.Bio); err != nil {
+		var i ListOwnersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Bio,
+			&i.TotalPets,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

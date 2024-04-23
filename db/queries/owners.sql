@@ -1,10 +1,15 @@
 -- name: GetOwner :one
-SELECT * FROM owners
-WHERE id = ? LIMIT 1;
+SELECT o.*, COUNT(p.id) AS total_pets FROM owners AS o
+LEFT JOIN pets AS p ON o.id = p.owner_id
+WHERE o.id = ?
+GROUP BY o.id, o.name, o.bio
+LIMIT 1;
 
 -- name: ListOwners :many
-SELECT * FROM owners
-ORDER BY name;
+SELECT o.*, COUNT(p.id) AS total_pets FROM owners AS o
+LEFT JOIN pets AS p ON o.id = p.owner_id
+GROUP BY o.id, o.name, o.bio
+ORDER BY o.id;
 
 -- name: CreateOwner :execresult
 INSERT INTO owners (

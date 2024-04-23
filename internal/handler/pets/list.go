@@ -1,6 +1,7 @@
-package owners
+package pets
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,30 +10,31 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type GetOwnerHandler struct {
+type ListOwnerPetsHandler struct {
 	querier sqlc.Querier
 }
 
-func NewGetOwnerHandler(querier sqlc.Querier) *GetOwnerHandler {
-	return &GetOwnerHandler{
+func NewListOwnerPetsHandler(querier sqlc.Querier) *ListOwnerPetsHandler {
+	return &ListOwnerPetsHandler{
 		querier: querier,
 	}
 }
 
-func (h *GetOwnerHandler) Handle() echo.HandlerFunc {
+func (h *ListOwnerPetsHandler) Handle() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		ctx := c.Request().Context()
-
 		ownerId, err := strconv.Atoi(c.Param("owner_id"))
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid owner id: %v", err))
 		}
 
-		owner, err := h.querier.GetOwner(ctx, int64(ownerId))
+		pets, err := h.querier.ListOwnerPets(
+			c.Request().Context(),
+			sql.NullInt64{Int64: int64(ownerId), Valid: true},
+		)
 		if err != nil {
 			return err
 		}
 
-		return c.JSON(http.StatusOK, owner)
+		return c.JSON(http.StatusOK, pets)
 	}
 }
