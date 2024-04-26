@@ -3,32 +3,35 @@ package fxdatabase
 import (
 	"context"
 	"database/sql/driver"
-
-	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook"
 )
 
-type Connector struct {
+type HookableConnector struct {
+	dsn    string
 	base   driver.Connector
-	driver *Driver
-	hooks  []hook.Hook
+	driver *HookableDriver
 }
 
-func NewConnector(base driver.Connector, driver *Driver) *Connector {
-	return &Connector{
+func NewHookableConnector(dsn string, base driver.Connector, driver *HookableDriver) *HookableConnector {
+	return &HookableConnector{
+		dsn:    dsn,
 		base:   base,
 		driver: driver,
 	}
 }
 
-func (c *Connector) Connect(ctx context.Context) (driver.Conn, error) {
+func (c *HookableConnector) Connect(ctx context.Context) (driver.Conn, error) {
+	if c.base == nil {
+		return c.driver.Open(c.dsn)
+	}
+
 	conn, err := c.base.Connect(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewConnection(conn, c.driver.Hooks()), nil
+	return NewHookableConnection(conn, c.driver.hooks), nil
 }
 
-func (c *Connector) Driver() driver.Driver {
+func (c *HookableConnector) Driver() driver.Driver {
 	return c.driver
 }

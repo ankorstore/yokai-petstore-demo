@@ -2,6 +2,8 @@ package trace
 
 import (
 	"context"
+	"database/sql/driver"
+	"errors"
 	"fmt"
 
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook"
@@ -20,9 +22,8 @@ func NewTraceHook() *TraceHook {
 
 func (h *TraceHook) Exclusions() []string {
 	return []string{
-		"Ping",
-		"ResetSession",
-		"PrepareContext",
+		"Connection::Ping",
+		"Connection::ResetSession",
 	}
 }
 
@@ -45,8 +46,10 @@ func (h *TraceHook) After(ctx context.Context, event *hook.HookEvent) {
 
 	code := codes.Ok
 	if event.Error() != nil {
-		span.RecordError(event.Error())
-		code = codes.Error
+		if !errors.Is(event.Error(), driver.ErrSkip) {
+			code = codes.Error
+			span.RecordError(event.Error())
+		}
 	}
 	span.SetStatus(code, code.String())
 	span.End()
@@ -57,10 +60,17 @@ func (h *TraceHook) eventAttributes(event *hook.HookEvent) []attribute.KeyValue 
 		semconv.DBStatementKey.String(event.Query()),
 	}
 
-	if event.Args() != nil {
+	if event.Arguments() != nil {
 		attributes = append(
 			attributes,
-			attribute.String("db.statement.args", fmt.Sprintf("%+v", event.Args())),
+			attribute.String("db.statement.arguments", fmt.Sprintf("%+v", event.Arguments())),
+		)
+	}
+
+	if event.Results() != nil {
+		attributes = append(
+			attributes,
+			attribute.String("db.statement.results", fmt.Sprintf("%+v", event.Results())),
 		)
 	}
 

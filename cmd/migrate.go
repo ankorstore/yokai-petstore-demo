@@ -25,7 +25,7 @@ var migrateCmd = &cobra.Command{
 				// modules
 				fxdatabase.FxDatabaseModule,
 				// migration
-				fxdatabase.RunFxOrmDatabaseMigration(fxdatabase.FetchMigrationDirection(args[0])),
+				fxdatabase.RunFxDatabaseMigration(fxdatabase.FetchMigrationDirection(args[0]), true),
 			).
 			RunApp()
 	},

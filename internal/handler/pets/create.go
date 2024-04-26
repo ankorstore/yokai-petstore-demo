@@ -45,7 +45,7 @@ func (h *CreateOwnerPetsHandler) Handle() echo.HandlerFunc {
 			sqlc.CreateOwnerPetParams{
 				Name:    params.Name,
 				Type:    params.Type,
-				OwnerID: sql.NullInt64{Int64: int64(ownerId), Valid: true},
+				OwnerID: sql.NullInt32{Int32: int32(ownerId), Valid: true},
 			})
 		if err != nil {
 			return err
@@ -57,8 +57,8 @@ func (h *CreateOwnerPetsHandler) Handle() echo.HandlerFunc {
 		}
 
 		pet, err := h.querier.GetOwnerPet(ctx, sqlc.GetOwnerPetParams{
-			OwnerID: sql.NullInt64{Int64: int64(ownerId), Valid: true},
-			ID:      petId,
+			OwnerID: sql.NullInt32{Int32: int32(ownerId), Valid: true},
+			ID:      int32(petId),
 		})
 		if err != nil {
 			return err

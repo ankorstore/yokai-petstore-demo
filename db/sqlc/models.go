@@ -9,14 +9,14 @@ import (
 )
 
 type Owner struct {
-	ID   int64          `json:"id"`
+	ID   int32          `json:"id"`
 	Name string         `json:"name"`
 	Bio  sql.NullString `json:"bio"`
 }
 
 type Pet struct {
-	ID      int64         `json:"id"`
+	ID      int32         `json:"id"`
 	Name    string        `json:"name"`
 	Type    string        `json:"type"`
-	OwnerID sql.NullInt64 `json:"owner_id"`
+	OwnerID sql.NullInt32 `json:"owner_id"`
 }

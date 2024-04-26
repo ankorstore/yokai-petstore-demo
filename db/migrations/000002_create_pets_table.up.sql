@@ -1,7 +1,7 @@
 CREATE TABLE pets (
-    id        BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name      text   NOT NULL,
-    type      text   NOT NULL,
-    owner_id  BIGINT,
+    id        INTEGER        NOT NULL PRIMARY KEY /*!40101 AUTO_INCREMENT */,
+    name      VARCHAR(255)   NOT NULL,
+    type      VARCHAR(255)   NOT NULL,
+    owner_id  INTEGER,
     FOREIGN KEY (owner_id) REFERENCES owners(id) ON DELETE CASCADE
 );

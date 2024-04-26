@@ -18,9 +18,8 @@ func NewLogHook() *LogHook {
 
 func (h *LogHook) Exclusions() []string {
 	return []string{
-		"Ping",
-		"ResetSession",
-		"PrepareContext",
+		"Connection::Ping",
+		"Connection::ResetSession",
 	}
 }
 
@@ -40,9 +39,11 @@ func (h *LogHook) After(ctx context.Context, event *hook.HookEvent) {
 		}
 	}
 
-	loggerEvent.Str("operation", event.Name())
-	loggerEvent.Str("query", event.Query())
-	loggerEvent.Str("latency", latency.String())
-	loggerEvent.Interface("args", event.Args())
-	loggerEvent.Msg("sql logger")
+	loggerEvent.
+		Str("operation", event.Name()).
+		Str("query", event.Query()).
+		Str("latency", latency.String()).
+		Interface("arguments", event.Arguments()).
+		Interface("results", event.Results()).
+		Msg("sql logger")
 }

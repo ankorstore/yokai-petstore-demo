@@ -14,16 +14,18 @@ type Hook interface {
 type HookEvent struct {
 	name      string
 	query     string
-	args      interface{}
+	arguments interface{}
+	results   interface{}
 	err       error
 	timestamp time.Time
 }
 
-func NewHookEvent(name string, query string, args interface{}) *HookEvent {
+func NewHookEvent(name string, query string, arguments interface{}, results interface{}) *HookEvent {
 	return &HookEvent{
 		name:      name,
 		query:     query,
-		args:      args,
+		arguments: arguments,
+		results:   results,
 		timestamp: time.Now(),
 	}
 }
@@ -36,8 +38,18 @@ func (e *HookEvent) Query() string {
 	return e.query
 }
 
-func (e *HookEvent) Args() interface{} {
-	return e.args
+func (e *HookEvent) Arguments() interface{} {
+	return e.arguments
+}
+
+func (e *HookEvent) SetResults(results interface{}) *HookEvent {
+	e.results = results
+
+	return e
+}
+
+func (e *HookEvent) Results() interface{} {
+	return e.results
 }
 
 func (e *HookEvent) SetError(err error) *HookEvent {

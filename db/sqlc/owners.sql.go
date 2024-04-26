@@ -24,7 +24,7 @@ type CreateOwnerParams struct {
 }
 
 func (q *Queries) CreateOwner(ctx context.Context, arg CreateOwnerParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createOwner, arg.Name, arg.Bio)
+	return q.exec(ctx, q.createOwnerStmt, createOwner, arg.Name, arg.Bio)
 }
 
 const deleteOwner = `-- name: DeleteOwner :exec
@@ -32,8 +32,8 @@ DELETE FROM owners
 WHERE id = ?
 `
 
-func (q *Queries) DeleteOwner(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteOwner, id)
+func (q *Queries) DeleteOwner(ctx context.Context, id int32) error {
+	_, err := q.exec(ctx, q.deleteOwnerStmt, deleteOwner, id)
 	return err
 }
 
@@ -46,14 +46,14 @@ LIMIT 1
 `
 
 type GetOwnerRow struct {
-	ID        int64          `json:"id"`
+	ID        int32          `json:"id"`
 	Name      string         `json:"name"`
 	Bio       sql.NullString `json:"bio"`
 	TotalPets int64          `json:"total_pets"`
 }
 
-func (q *Queries) GetOwner(ctx context.Context, id int64) (GetOwnerRow, error) {
-	row := q.db.QueryRowContext(ctx, getOwner, id)
+func (q *Queries) GetOwner(ctx context.Context, id int32) (GetOwnerRow, error) {
+	row := q.queryRow(ctx, q.getOwnerStmt, getOwner, id)
 	var i GetOwnerRow
 	err := row.Scan(
 		&i.ID,
@@ -72,14 +72,14 @@ ORDER BY o.id
 `
 
 type ListOwnersRow struct {
-	ID        int64          `json:"id"`
+	ID        int32          `json:"id"`
 	Name      string         `json:"name"`
 	Bio       sql.NullString `json:"bio"`
 	TotalPets int64          `json:"total_pets"`
 }
 
 func (q *Queries) ListOwners(ctx context.Context) ([]ListOwnersRow, error) {
-	rows, err := q.db.QueryContext(ctx, listOwners)
+	rows, err := q.query(ctx, q.listOwnersStmt, listOwners)
 	if err != nil {
 		return nil, err
 	}

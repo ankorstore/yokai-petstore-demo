@@ -4,7 +4,6 @@ import (
 	"database/sql"
 
 	"github.com/ankorstore/yokai-petstore-demo/db/sqlc"
-
 	"go.uber.org/fx"
 )
 

@@ -28,7 +28,7 @@ func (h *DeleteOwnerHandler) Handle() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid owner id: %v", err))
 		}
 
-		err = h.querier.DeleteOwner(ctx, int64(ownerId))
+		err = h.querier.DeleteOwner(ctx, int32(ownerId))
 		if err != nil {
 			return err
 		}

@@ -35,8 +35,8 @@ func (h *DeleteOwnerPetHandler) Handle() echo.HandlerFunc {
 		}
 
 		err = h.querier.DeleteOwnerPet(ctx, sqlc.DeleteOwnerPetParams{
-			OwnerID: sql.NullInt64{Int64: int64(ownerId), Valid: true},
-			ID:      int64(petId),
+			OwnerID: sql.NullInt32{Int32: int32(ownerId), Valid: true},
+			ID:      int32(petId),
 		})
 		if err != nil {
 			return err

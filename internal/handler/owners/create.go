@@ -48,7 +48,7 @@ func (h *CreateOwnerHandler) Handle() echo.HandlerFunc {
 			return err
 		}
 
-		owner, err := h.querier.GetOwner(ctx, ownerId)
+		owner, err := h.querier.GetOwner(ctx, int32(ownerId))
 		if err != nil {
 			return err
 		}

@@ -6,36 +6,42 @@ import (
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook"
 )
 
-type Driver struct {
+type HookableDriver struct {
+	name  string
 	base  driver.Driver
 	hooks []hook.Hook
 }
 
-func NewDriver(base driver.Driver, hooks []hook.Hook) *Driver {
-	return &Driver{
+func NewHookableDriver(name string, base driver.Driver, hooks []hook.Hook) *HookableDriver {
+	return &HookableDriver{
+		name:  name,
 		base:  base,
 		hooks: hooks,
 	}
 }
 
-func (d *Driver) Open(name string) (driver.Conn, error) {
-	connection, err := d.base.Open(name)
+func (d *HookableDriver) Name() string {
+	return d.name
+}
+
+func (d *HookableDriver) Open(dsn string) (driver.Conn, error) {
+	connection, err := d.base.Open(dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewConnection(connection, d.hooks), nil
+	return NewHookableConnection(connection, d.hooks), nil
 }
 
-func (d *Driver) OpenConnector(name string) (driver.Connector, error) {
-	connector, err := d.base.(driver.DriverContext).OpenConnector(name)
-	if err != nil {
-		return nil, err
+func (d *HookableDriver) OpenConnector(dsn string) (driver.Connector, error) {
+	if driverContext, ok := d.base.(driver.DriverContext); ok {
+		connector, err := driverContext.OpenConnector(dsn)
+		if err != nil {
+			return nil, err
+		}
+
+		return NewHookableConnector(dsn, connector, d), nil
 	}
 
-	return NewConnector(connector, d), nil
-}
-
-func (d *Driver) Hooks() []hook.Hook {
-	return d.hooks
+	return NewHookableConnector(dsn, nil, d), nil
 }

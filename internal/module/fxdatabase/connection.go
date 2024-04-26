@@ -7,200 +7,198 @@ import (
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook"
 )
 
-type Connection struct {
+type HookableConnection struct {
 	base  driver.Conn
 	hooks []hook.Hook
 }
 
-func NewConnection(base driver.Conn, hooks []hook.Hook) *Connection {
-	return &Connection{
+func NewHookableConnection(base driver.Conn, hooks []hook.Hook) *HookableConnection {
+	return &HookableConnection{
 		base:  base,
 		hooks: hooks,
 	}
 }
 
-func (c *Connection) Exec(query string, args []driver.Value) (res driver.Result, err error) {
-	event := hook.NewHookEvent("Exec", query, args)
+func (c *HookableConnection) Exec(query string, args []driver.Value) (driver.Result, error) {
+	event := hook.NewHookEvent("Connection::Exec", query, args, nil)
 
 	ctx := c.applyBeforeHooks(context.Background(), event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
 
 	engine, ok := c.base.(driver.Execer)
 	if !ok {
 		return nil, driver.ErrSkip
 	}
 
-	return engine.Exec(query, args)
+	res, err := engine.Exec(query, args)
+
+	c.applyAfterHooks(ctx, event.SetResults(res).SetError(err))
+
+	return NewHookableResult(res, ctx, query, c.hooks), err
 }
 
-func (c *Connection) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (res driver.Result, err error) {
-	event := hook.NewHookEvent("ExecContext", query, args)
+func (c *HookableConnection) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+	event := hook.NewHookEvent("Connection::ExecContext", query, args, nil)
 
 	ctx = c.applyBeforeHooks(ctx, event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
 
 	engine, ok := c.base.(driver.ExecerContext)
 	if !ok {
 		return nil, driver.ErrSkip
 	}
 
-	return engine.ExecContext(ctx, query, args)
+	res, err := engine.ExecContext(ctx, query, args)
+
+	c.applyAfterHooks(ctx, event.SetResults(res).SetError(err))
+
+	return NewHookableResult(res, ctx, query, c.hooks), err
 }
 
-func (c *Connection) Query(query string, args []driver.Value) (rows driver.Rows, err error) {
-	event := hook.NewHookEvent("Query", query, args)
+func (c *HookableConnection) Query(query string, args []driver.Value) (driver.Rows, error) {
+	event := hook.NewHookEvent("Connection::Query", query, args, nil)
 
 	ctx := c.applyBeforeHooks(context.Background(), event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
 
 	engine, ok := c.base.(driver.Queryer)
 	if !ok {
 		return nil, driver.ErrSkip
 	}
 
-	return engine.Query(query, args)
+	rows, err := engine.Query(query, args)
+
+	c.applyAfterHooks(ctx, event.SetResults(rows).SetError(err))
+
+	return rows, err
 }
 
-func (c *Connection) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (rows driver.Rows, err error) {
-	event := hook.NewHookEvent("QueryContext", query, args)
+func (c *HookableConnection) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+	event := hook.NewHookEvent("Connection::QueryContext", query, args, nil)
 
 	ctx = c.applyBeforeHooks(ctx, event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
 
 	engine, ok := c.base.(driver.QueryerContext)
 	if !ok {
 		return nil, driver.ErrSkip
 	}
 
-	return engine.QueryContext(ctx, query, args)
+	rows, err := engine.QueryContext(ctx, query, args)
+
+	c.applyAfterHooks(ctx, event.SetResults(rows).SetError(err))
+
+	return rows, err
 }
 
-func (c *Connection) Ping(ctx context.Context) (err error) {
-	event := hook.NewHookEvent("Ping", "ping", nil)
+func (c *HookableConnection) Ping(ctx context.Context) error {
+	event := hook.NewHookEvent("Connection::Ping", "ping", nil, nil)
 
 	ctx = c.applyBeforeHooks(ctx, event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
 
 	engine, ok := c.base.(driver.Pinger)
 	if !ok {
 		return driver.ErrSkip
 	}
 
-	return engine.Ping(ctx)
+	err := engine.Ping(ctx)
+
+	c.applyAfterHooks(ctx, event.SetError(err))
+
+	return err
 }
 
-func (c *Connection) PrepareContext(ctx context.Context, query string) (stmt driver.Stmt, err error) {
-	event := hook.NewHookEvent("PrepareContext", query, nil)
+func (c *HookableConnection) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
+	event := hook.NewHookEvent("Connection::PrepareContext", query, nil, nil)
 
 	ctx = c.applyBeforeHooks(ctx, event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
 
-	if prepare, ok := c.base.(driver.ConnPrepareContext); ok {
-		if stmt, err = prepare.PrepareContext(ctx, query); err != nil {
-			return nil, err
-		}
+	if engine, ok := c.base.(driver.ConnPrepareContext); ok {
+		stmt, err := engine.PrepareContext(ctx, query)
+
+		c.applyAfterHooks(ctx, event.SetError(err))
+
+		return NewHookableStatement(stmt, ctx, query, c.hooks), err
 	} else {
-		if stmt, err = c.base.Prepare(query); err != nil {
-			return nil, err
-		}
-	}
+		stmt, err := c.base.Prepare(query)
 
-	return stmt, err
+		c.applyAfterHooks(ctx, event.SetError(err))
+
+		return NewHookableStatement(stmt, ctx, query, c.hooks), err
+	}
 }
 
-func (c *Connection) Prepare(query string) (stmt driver.Stmt, err error) {
-	event := hook.NewHookEvent("Prepare", query, nil)
+func (c *HookableConnection) Prepare(query string) (driver.Stmt, error) {
+	event := hook.NewHookEvent("Connection::Prepare", query, nil, nil)
 
 	ctx := c.applyBeforeHooks(context.Background(), event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
 
-	return c.base.Prepare(query)
+	stmt, err := c.base.Prepare(query)
+
+	c.applyAfterHooks(ctx, event.SetError(err))
+
+	return NewHookableStatement(stmt, nil, query, c.hooks), err
 }
 
-func (c *Connection) Begin() (tx driver.Tx, err error) {
-	event := hook.NewHookEvent("Begin", "begin", nil)
+func (c *HookableConnection) Begin() (driver.Tx, error) {
+	event := hook.NewHookEvent("Connection::Begin", "begin", nil, nil)
 
 	ctx := c.applyBeforeHooks(context.Background(), event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
 
-	return c.base.Begin()
-}
+	tx, err := c.base.Begin()
 
-func (c *Connection) BeginTx(ctx context.Context, opts driver.TxOptions) (tx driver.Tx, err error) {
-	event := hook.NewHookEvent("BeginTx", "begin tx", nil)
-
-	ctx = c.applyBeforeHooks(ctx, event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
-
-	if beginTx, ok := c.base.(driver.ConnBeginTx); ok {
-		if tx, err = beginTx.BeginTx(ctx, opts); err != nil {
-			return nil, err
-		}
-	} else {
-		if tx, err = c.base.Begin(); err != nil { // nolint
-			return nil, err
-		}
-	}
+	c.applyAfterHooks(ctx, event.SetError(err))
 
 	return tx, err
 }
 
-func (c *Connection) Close() (err error) {
-	event := hook.NewHookEvent("Close", "close", nil)
+func (c *HookableConnection) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
+	event := hook.NewHookEvent("Connection::BeginTx", "begin tx", nil, nil)
 
-	ctx := c.applyBeforeHooks(context.Background(), event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
+	ctx = c.applyBeforeHooks(ctx, event)
 
-	return c.base.Close()
+	if engine, ok := c.base.(driver.ConnBeginTx); ok {
+		tx, err := engine.BeginTx(ctx, opts)
+
+		c.applyAfterHooks(ctx, event.SetError(err))
+
+		return tx, err
+	} else {
+		tx, err := c.base.Begin()
+
+		c.applyAfterHooks(ctx, event.SetError(err))
+
+		return tx, err
+	}
 }
 
-func (c *Connection) ResetSession(ctx context.Context) (err error) {
-	event := hook.NewHookEvent("ResetSession", "reset", nil)
+func (c *HookableConnection) Close() error {
+	event := hook.NewHookEvent("Connection::Close", "close", nil, nil)
+
+	ctx := c.applyBeforeHooks(context.Background(), event)
+
+	err := c.base.Close()
+
+	c.applyAfterHooks(ctx, event.SetError(err))
+
+	return err
+}
+
+func (c *HookableConnection) ResetSession(ctx context.Context) error {
+	event := hook.NewHookEvent("Connection::ResetSession", "reset", nil, nil)
 
 	ctx = c.applyBeforeHooks(context.Background(), event)
-	defer func() {
-		event.SetError(err)
-		c.applyAfterHooks(ctx, event)
-	}()
 
-	if cr, ok := c.base.(driver.SessionResetter); ok {
-		return cr.ResetSession(ctx)
+	if engine, ok := c.base.(driver.SessionResetter); ok {
+		err := engine.ResetSession(ctx)
+
+		c.applyAfterHooks(ctx, event.SetError(err))
+
+		return err
 	}
+
+	c.applyAfterHooks(ctx, event)
 
 	return nil
 }
 
-func (c *Connection) applyBeforeHooks(ctx context.Context, evt *hook.HookEvent) context.Context {
+func (c *HookableConnection) applyBeforeHooks(ctx context.Context, evt *hook.HookEvent) context.Context {
 	for _, h := range c.hooks {
 		if !c.checkHookExcluded(h, evt) {
 			ctx = h.Before(ctx, evt)
@@ -210,7 +208,7 @@ func (c *Connection) applyBeforeHooks(ctx context.Context, evt *hook.HookEvent) 
 	return ctx
 }
 
-func (c *Connection) applyAfterHooks(ctx context.Context, evt *hook.HookEvent) {
+func (c *HookableConnection) applyAfterHooks(ctx context.Context, evt *hook.HookEvent) {
 	for _, h := range c.hooks {
 		if !c.checkHookExcluded(h, evt) {
 			h.After(ctx, evt)
@@ -218,7 +216,7 @@ func (c *Connection) applyAfterHooks(ctx context.Context, evt *hook.HookEvent) {
 	}
 }
 
-func (c *Connection) checkHookExcluded(h hook.Hook, evt *hook.HookEvent) bool {
+func (c *HookableConnection) checkHookExcluded(h hook.Hook, evt *hook.HookEvent) bool {
 	for _, exclusion := range h.Exclusions() {
 		if evt.Name() == exclusion {
 			return true

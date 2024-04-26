@@ -28,7 +28,7 @@ func (h *GetOwnerHandler) Handle() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("invalid owner id: %v", err))
 		}
 
-		owner, err := h.querier.GetOwner(ctx, int64(ownerId))
+		owner, err := h.querier.GetOwner(ctx, int32(ownerId))
 		if err != nil {
 			return err
 		}

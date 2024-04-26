@@ -41,6 +41,7 @@ func RunTest(tb testing.TB, options ...fx.Option) {
 	tb.Helper()
 
 	tb.Setenv("APP_CONFIG_PATH", fmt.Sprintf("%s/configs", RootDir))
+	tb.Setenv("MODULES_DATABASE_MIGRATIONS", fmt.Sprintf("%s/db/migrations", RootDir))
 
 	Bootstrapper.RunTestApp(tb, fx.Options(options...))
 }

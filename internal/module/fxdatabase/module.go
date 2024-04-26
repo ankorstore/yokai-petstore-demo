@@ -10,10 +10,13 @@ import (
 	tracehook "github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook/trace"
 	"github.com/ankorstore/yokai/config"
 	"github.com/ankorstore/yokai/log"
-	dri "github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/mysql"
+	"github.com/golang-migrate/migrate/v4/database"
+	mysqlmigrate "github.com/golang-migrate/migrate/v4/database/mysql"
+	sqlite3migrate "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/fx"
 )
@@ -37,24 +40,29 @@ type FxDatabaseParam struct {
 }
 
 func NewFxDatabase(p FxDatabaseParam) (*sql.DB, error) {
-	driver := NewDriver(&dri.MySQLDriver{}, []hook.Hook{
-		tracehook.NewTraceHook(),
-		loghook.NewLogHook(),
-	})
-
-	driverName := fmt.Sprintf("yokai-%s", p.Config.GetString("modules.database.driver"))
-
-	sql.Register(driverName, driver)
+	driverName, err := RegisterDriver(
+		p.Config.GetString("modules.database.driver"),
+		[]hook.Hook{
+			tracehook.NewTraceHook(),
+			loghook.NewLogHook(),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	db, err := sql.Open(driverName, p.Config.GetString("modules.database.dsn"))
-
 	if err != nil {
 		return nil, err
 	}
 
 	p.LifeCycle.Append(fx.Hook{
 		OnStop: func(_ context.Context) error {
-			return db.Close()
+			if p.Config.GetString("modules.database.driver") != "sqlite" {
+				return db.Close()
+			}
+
+			return nil
 		},
 	})
 
@@ -70,7 +78,15 @@ type FxDatabaseMigratorParam struct {
 }
 
 func NewFxDatabaseMigrator(p FxDatabaseMigratorParam) (*migrate.Migrate, error) {
-	driver, err := mysql.WithInstance(p.Db, &mysql.Config{})
+	var driver database.Driver
+	var err error
+
+	if p.Config.GetString("modules.database.driver") == "sqlite" {
+		driver, err = sqlite3migrate.WithInstance(p.Db, &sqlite3migrate.Config{})
+	} else {
+		driver, err = mysqlmigrate.WithInstance(p.Db, &mysqlmigrate.Config{})
+	}
+
 	if err != nil {
 		p.Logger.Error().Err(err).Msg("cannot build database migrations driver")
 
@@ -93,7 +109,7 @@ func NewFxDatabaseMigrator(p FxDatabaseMigratorParam) (*migrate.Migrate, error) 
 	return migrator, nil
 }
 
-func RunFxOrmDatabaseMigration(direction MigrationDirection) fx.Option {
+func RunFxDatabaseMigration(direction MigrationDirection, shutdown bool) fx.Option {
 	return fx.Invoke(func(migrator *migrate.Migrate, logger *log.Logger, sd fx.Shutdowner) error {
 		logger.Info().Msgf("starting database migrations (direction: %s)", direction)
 
@@ -121,6 +137,10 @@ func RunFxOrmDatabaseMigration(direction MigrationDirection) fx.Option {
 
 		logger.Info().Msgf("database migrations (direction: %s) applied with success", direction)
 
-		return sd.Shutdown()
+		if shutdown {
+			return sd.Shutdown()
+		}
+
+		return nil
 	})
 }

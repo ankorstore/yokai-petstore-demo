@@ -21,11 +21,11 @@ INSERT INTO pets (
 type CreateOwnerPetParams struct {
 	Name    string        `json:"name"`
 	Type    string        `json:"type"`
-	OwnerID sql.NullInt64 `json:"owner_id"`
+	OwnerID sql.NullInt32 `json:"owner_id"`
 }
 
 func (q *Queries) CreateOwnerPet(ctx context.Context, arg CreateOwnerPetParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createOwnerPet, arg.Name, arg.Type, arg.OwnerID)
+	return q.exec(ctx, q.createOwnerPetStmt, createOwnerPet, arg.Name, arg.Type, arg.OwnerID)
 }
 
 const deleteOwnerPet = `-- name: DeleteOwnerPet :exec
@@ -35,12 +35,12 @@ AND id = ?
 `
 
 type DeleteOwnerPetParams struct {
-	OwnerID sql.NullInt64 `json:"owner_id"`
-	ID      int64         `json:"id"`
+	OwnerID sql.NullInt32 `json:"owner_id"`
+	ID      int32         `json:"id"`
 }
 
 func (q *Queries) DeleteOwnerPet(ctx context.Context, arg DeleteOwnerPetParams) error {
-	_, err := q.db.ExecContext(ctx, deleteOwnerPet, arg.OwnerID, arg.ID)
+	_, err := q.exec(ctx, q.deleteOwnerPetStmt, deleteOwnerPet, arg.OwnerID, arg.ID)
 	return err
 }
 
@@ -52,12 +52,12 @@ LIMIT 1
 `
 
 type GetOwnerPetParams struct {
-	OwnerID sql.NullInt64 `json:"owner_id"`
-	ID      int64         `json:"id"`
+	OwnerID sql.NullInt32 `json:"owner_id"`
+	ID      int32         `json:"id"`
 }
 
 func (q *Queries) GetOwnerPet(ctx context.Context, arg GetOwnerPetParams) (Pet, error) {
-	row := q.db.QueryRowContext(ctx, getOwnerPet, arg.OwnerID, arg.ID)
+	row := q.queryRow(ctx, q.getOwnerPetStmt, getOwnerPet, arg.OwnerID, arg.ID)
 	var i Pet
 	err := row.Scan(
 		&i.ID,
@@ -74,8 +74,8 @@ WHERE owner_id = ?
 ORDER BY id
 `
 
-func (q *Queries) ListOwnerPets(ctx context.Context, ownerID sql.NullInt64) ([]Pet, error) {
-	rows, err := q.db.QueryContext(ctx, listOwnerPets, ownerID)
+func (q *Queries) ListOwnerPets(ctx context.Context, ownerID sql.NullInt32) ([]Pet, error) {
+	rows, err := q.query(ctx, q.listOwnerPetsStmt, listOwnerPets, ownerID)
 	if err != nil {
 		return nil, err
 	}

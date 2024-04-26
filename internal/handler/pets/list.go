@@ -29,7 +29,7 @@ func (h *ListOwnerPetsHandler) Handle() echo.HandlerFunc {
 
 		pets, err := h.querier.ListOwnerPets(
 			c.Request().Context(),
-			sql.NullInt64{Int64: int64(ownerId), Valid: true},
+			sql.NullInt32{Int32: int32(ownerId), Valid: true},
 		)
 		if err != nil {
 			return err

@@ -57,6 +57,8 @@ modules:
           request_path: true
           response_status: true
   database:
+    #driver: sqlite
+    #dsn: "file:database.sqlite"
     driver: mysql
     dsn: ${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:${MYSQL_PORT})/${MYSQL_DATABASE}?parseTime=true
     migrations: db/migrations

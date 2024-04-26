@@ -1,6 +1,9 @@
 app:
   debug: true
 modules:
+  database:
+    driver: sqlite
+    dsn: ":memory:"
   log:
     level: debug
     output: test
