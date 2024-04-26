@@ -31,8 +31,11 @@ func (t *HookableTransaction) Commit() error {
 	t.applyBeforeHooks(event)
 
 	err := t.base.Commit()
+	if err != nil {
+		event.SetError(err)
+	}
 
-	t.applyAfterHooks(event.SetError(err))
+	t.applyAfterHooks(event)
 
 	return err
 }
@@ -43,8 +46,11 @@ func (t *HookableTransaction) Rollback() error {
 	t.applyBeforeHooks(event)
 
 	err := t.base.Rollback()
+	if err != nil {
+		event.SetError(err)
+	}
 
-	t.applyAfterHooks(event.SetError(err))
+	t.applyAfterHooks(event)
 
 	return err
 }
