@@ -12,20 +12,20 @@ type Hook interface {
 }
 
 type HookEvent struct {
-	name      string
-	query     string
-	arguments interface{}
-	results   interface{}
-	err       error
-	timestamp time.Time
+	name         string
+	query        string
+	arguments    any
+	lastInsertId int64
+	rowsAffected int64
+	err          error
+	timestamp    time.Time
 }
 
-func NewHookEvent(name string, query string, arguments interface{}, results interface{}) *HookEvent {
+func NewHookEvent(name string, query string, arguments interface{}) *HookEvent {
 	return &HookEvent{
 		name:      name,
 		query:     query,
 		arguments: arguments,
-		results:   results,
 		timestamp: time.Now(),
 	}
 }
@@ -38,24 +38,15 @@ func (e *HookEvent) Query() string {
 	return e.query
 }
 
-func (e *HookEvent) Arguments() interface{} {
+func (e *HookEvent) Arguments() any {
 	return e.arguments
 }
 
-func (e *HookEvent) SetResults(results interface{}) *HookEvent {
-	e.results = results
-
-	return e
+func (e *HookEvent) LastInsertId() int64 {
+	return e.lastInsertId
 }
-
-func (e *HookEvent) Results() interface{} {
-	return e.results
-}
-
-func (e *HookEvent) SetError(err error) *HookEvent {
-	e.err = err
-
-	return e
+func (e *HookEvent) RowsAffected() int64 {
+	return e.rowsAffected
 }
 
 func (e *HookEvent) Error() error {
@@ -64,4 +55,22 @@ func (e *HookEvent) Error() error {
 
 func (e *HookEvent) Timestamp() time.Time {
 	return e.timestamp
+}
+
+func (e *HookEvent) SetLastInsertId(lastInsertId int64) *HookEvent {
+	e.lastInsertId = lastInsertId
+
+	return e
+}
+
+func (e *HookEvent) SetRowsAffected(rowsAffected int64) *HookEvent {
+	e.rowsAffected = rowsAffected
+
+	return e
+}
+
+func (e *HookEvent) SetError(err error) *HookEvent {
+	e.err = err
+
+	return e
 }

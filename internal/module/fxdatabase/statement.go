@@ -36,25 +36,44 @@ func (s *HookableStatement) NumInput() int {
 }
 
 func (s *HookableStatement) Exec(args []driver.Value) (driver.Result, error) {
-	event := hook.NewHookEvent("Statement::Exec", s.query, args, nil)
+	event := hook.NewHookEvent("Statement::Exec", s.query, args)
 
 	s.applyBeforeHooks(event)
 
 	res, err := s.base.Exec(args)
 
-	s.applyAfterHooks(event.SetResults(res).SetError(err))
+	if err != nil {
+		event.SetError(err)
+	}
 
-	return NewHookableResult(res, s.context, s.query, s.hooks), err
+	if res != nil {
+		lastInsertId, lastInsertIdErr := res.LastInsertId()
+		if lastInsertIdErr == nil {
+			event.SetLastInsertId(lastInsertId)
+		}
+
+		rowsAffected, rowsAffectedErr := res.RowsAffected()
+		if rowsAffectedErr == nil {
+			event.SetRowsAffected(rowsAffected)
+		}
+	}
+
+	s.applyAfterHooks(event)
+
+	return res, err
 }
 
 func (s *HookableStatement) Query(args []driver.Value) (driver.Rows, error) {
-	event := hook.NewHookEvent("Statement::Query", s.query, args, nil)
+	event := hook.NewHookEvent("Statement::Query", s.query, args)
 
 	s.applyBeforeHooks(event)
 
 	rows, err := s.base.Query(args)
+	if err != nil {
+		event.SetError(err)
+	}
 
-	s.applyAfterHooks(event.SetResults(rows).SetError(err))
+	s.applyAfterHooks(event)
 
 	return rows, err
 }

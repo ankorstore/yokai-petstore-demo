@@ -20,14 +20,18 @@ func NewExampleHandler(db *sql.DB) *ExampleHandler {
 
 func (h *ExampleHandler) Handle() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		ctx := c.Request().Context()
 
-		stmt, err := h.db.PrepareContext(c.Request().Context(), "UPDATE pets SET name = ? WHERE id = ?")
+		tx, err := h.db.BeginTx(ctx, nil)
+		defer tx.Rollback()
+
+		stmt, err := tx.PrepareContext(c.Request().Context(), "UPDATE pets SET name = ?")
 		if err != nil {
 			return err
 		}
 		defer stmt.Close()
 
-		res, err := stmt.Exec("new", 1)
+		res, err := stmt.Exec("generic")
 		if err != nil {
 			return err
 		}
@@ -38,6 +42,11 @@ func (h *ExampleHandler) Handle() echo.HandlerFunc {
 		}
 
 		rowsAffected, err := res.RowsAffected()
+		if err != nil {
+			return err
+		}
+
+		err = tx.Commit()
 		if err != nil {
 			return err
 		}

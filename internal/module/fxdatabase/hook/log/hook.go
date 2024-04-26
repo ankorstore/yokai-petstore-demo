@@ -23,7 +23,7 @@ func (h *LogHook) Exclusions() []string {
 	}
 }
 
-func (h *LogHook) Before(ctx context.Context, event *hook.HookEvent) context.Context {
+func (h *LogHook) Before(ctx context.Context, _ *hook.HookEvent) context.Context {
 	return ctx
 }
 
@@ -39,11 +39,18 @@ func (h *LogHook) After(ctx context.Context, event *hook.HookEvent) {
 		}
 	}
 
+	loggerEvent.Str("operation", event.Name()).Str("latency", latency.String())
+
+	if event.Query() != "" {
+		loggerEvent.Str("query", event.Query())
+	}
+
+	if event.Arguments() != nil {
+		loggerEvent.Interface("arguments", event.Arguments())
+	}
+
 	loggerEvent.
-		Str("operation", event.Name()).
-		Str("query", event.Query()).
-		Str("latency", latency.String()).
-		Interface("arguments", event.Arguments()).
-		Interface("results", event.Results()).
+		Int64("lastInsertId", event.LastInsertId()).
+		Int64("rowsAffected", event.RowsAffected()).
 		Msg("sql logger")
 }

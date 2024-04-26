@@ -28,11 +28,27 @@ func (h *TraceHook) Exclusions() []string {
 }
 
 func (h *TraceHook) Before(ctx context.Context, event *hook.HookEvent) context.Context {
+	var attributes []attribute.KeyValue
+
+	if event.Query() != "" {
+		attributes = append(
+			attributes,
+			semconv.DBStatementKey.String(event.Query()),
+		)
+	}
+
+	if event.Arguments() != nil {
+		attributes = append(
+			attributes,
+			attribute.String("db.statement.arguments", fmt.Sprintf("%+v", event.Arguments())),
+		)
+	}
+
 	ctx, _ = trace.CtxTracerProvider(ctx).Tracer("yokai-sql").Start(
 		ctx,
 		event.Name(),
 		oteltrace.WithSpanKind(oteltrace.SpanKindClient),
-		oteltrace.WithAttributes(h.eventAttributes(event)...),
+		oteltrace.WithAttributes(attributes...),
 	)
 
 	return ctx
@@ -52,27 +68,11 @@ func (h *TraceHook) After(ctx context.Context, event *hook.HookEvent) {
 		}
 	}
 	span.SetStatus(code, code.String())
+
+	span.SetAttributes(
+		attribute.Int64("db.lastInsertId", event.LastInsertId()),
+		attribute.Int64("db.rowsAffected", event.RowsAffected()),
+	)
+
 	span.End()
-}
-
-func (h *TraceHook) eventAttributes(event *hook.HookEvent) []attribute.KeyValue {
-	attributes := []attribute.KeyValue{
-		semconv.DBStatementKey.String(event.Query()),
-	}
-
-	if event.Arguments() != nil {
-		attributes = append(
-			attributes,
-			attribute.String("db.statement.arguments", fmt.Sprintf("%+v", event.Arguments())),
-		)
-	}
-
-	if event.Results() != nil {
-		attributes = append(
-			attributes,
-			attribute.String("db.statement.results", fmt.Sprintf("%+v", event.Results())),
-		)
-	}
-
-	return attributes
 }
