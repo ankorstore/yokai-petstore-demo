@@ -15,7 +15,7 @@ func NewLogHook() *LogHook {
 	return &LogHook{}
 }
 
-func (h *LogHook) ExcludedOperation() []string {
+func (h *LogHook) ExcludedOperations() []string {
 	return []string{
 		"Connection::Ping",
 		"Connection::ResetSession",

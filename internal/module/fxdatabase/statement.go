@@ -98,7 +98,7 @@ func (s *HookableStatement) applyAfterHooks(event *hook.HookEvent) {
 }
 
 func (s *HookableStatement) checkHookExcluded(h hook.Hook, event *hook.HookEvent) bool {
-	for _, operation := range h.ExcludedOperation() {
+	for _, operation := range h.ExcludedOperations() {
 		if event.Operation() == operation {
 			return true
 		}

@@ -306,7 +306,7 @@ func (c *HookableConnection) applyAfterHooks(ctx context.Context, event *hook.Ho
 }
 
 func (c *HookableConnection) checkHookExcluded(h hook.Hook, event *hook.HookEvent) bool {
-	for _, operation := range h.ExcludedOperation() {
+	for _, operation := range h.ExcludedOperations() {
 		if event.Operation() == operation {
 			return true
 		}

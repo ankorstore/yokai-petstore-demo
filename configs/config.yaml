@@ -47,7 +47,7 @@ modules:
       address: ":8080"
       errors:
         obfuscate: true
-        stack: true
+        stack: false
       trace:
         enabled: true
       metrics:

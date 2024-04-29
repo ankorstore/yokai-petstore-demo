@@ -2,6 +2,7 @@ package pets
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -39,6 +40,10 @@ func (h *GetOwnerPetHandler) Handle() echo.HandlerFunc {
 			ID:      int32(petId),
 		})
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("pet with id %d not found", petId))
+			}
+
 			return err
 		}
 

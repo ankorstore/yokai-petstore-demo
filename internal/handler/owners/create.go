@@ -2,6 +2,7 @@ package owners
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -50,6 +51,10 @@ func (h *CreateOwnerHandler) Handle() echo.HandlerFunc {
 
 		owner, err := h.querier.GetOwner(ctx, int32(ownerId))
 		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return echo.NewHTTPError(http.StatusNotFound, fmt.Sprintf("owner with id %d not found", ownerId))
+			}
+
 			return err
 		}
 

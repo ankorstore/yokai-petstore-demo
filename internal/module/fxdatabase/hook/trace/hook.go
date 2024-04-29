@@ -20,7 +20,7 @@ func NewTraceHook() *TraceHook {
 	return &TraceHook{}
 }
 
-func (h *TraceHook) ExcludedOperation() []string {
+func (h *TraceHook) ExcludedOperations() []string {
 	return []string{
 		"Connection::Ping",
 		"Connection::ResetSession",

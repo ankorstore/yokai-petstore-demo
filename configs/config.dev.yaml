@@ -1,6 +1,11 @@
 app:
   debug: true
 modules:
+  http:
+    server:
+      errors:
+        obfuscate: false
+        stack: true
   log:
     level: debug
     output: console
