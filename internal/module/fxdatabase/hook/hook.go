@@ -6,32 +6,48 @@ import (
 )
 
 type Hook interface {
-	Exclusions() []string
+	ExcludedOperation() []string
 	Before(context.Context, *HookEvent) context.Context
 	After(context.Context, *HookEvent)
 }
 
 type HookEvent struct {
-	name         string
+	operation    string
 	query        string
 	arguments    any
 	lastInsertId int64
 	rowsAffected int64
 	err          error
-	timestamp    time.Time
+	startedAt    time.Time
+	stoppedAt    time.Time
 }
 
-func NewHookEvent(name string, query string, arguments interface{}) *HookEvent {
+func NewHookEvent(operation string, query string, arguments interface{}) *HookEvent {
 	return &HookEvent{
-		name:      name,
+		operation: operation,
 		query:     query,
 		arguments: arguments,
-		timestamp: time.Now(),
 	}
 }
 
-func (e *HookEvent) Name() string {
-	return e.name
+func (e *HookEvent) Start() *HookEvent {
+	e.startedAt = time.Now()
+
+	return e
+}
+
+func (e *HookEvent) Stop() *HookEvent {
+	e.stoppedAt = time.Now()
+
+	return e
+}
+
+func (e *HookEvent) Latency() time.Duration {
+	return e.stoppedAt.Sub(e.startedAt)
+}
+
+func (e *HookEvent) Operation() string {
+	return e.operation
 }
 
 func (e *HookEvent) Query() string {
@@ -51,10 +67,6 @@ func (e *HookEvent) RowsAffected() int64 {
 
 func (e *HookEvent) Error() error {
 	return e.err
-}
-
-func (e *HookEvent) Timestamp() time.Time {
-	return e.timestamp
 }
 
 func (e *HookEvent) SetLastInsertId(lastInsertId int64) *HookEvent {

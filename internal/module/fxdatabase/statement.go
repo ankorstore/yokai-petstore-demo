@@ -40,8 +40,9 @@ func (s *HookableStatement) Exec(args []driver.Value) (driver.Result, error) {
 
 	s.applyBeforeHooks(event)
 
+	event.Start()
 	res, err := s.base.Exec(args)
-
+	event.Stop()
 	if err != nil {
 		event.SetError(err)
 	}
@@ -68,7 +69,9 @@ func (s *HookableStatement) Query(args []driver.Value) (driver.Rows, error) {
 
 	s.applyBeforeHooks(event)
 
+	event.Start()
 	rows, err := s.base.Query(args)
+	event.Stop()
 	if err != nil {
 		event.SetError(err)
 	}
@@ -78,25 +81,25 @@ func (s *HookableStatement) Query(args []driver.Value) (driver.Rows, error) {
 	return rows, err
 }
 
-func (s *HookableStatement) applyBeforeHooks(evt *hook.HookEvent) {
+func (s *HookableStatement) applyBeforeHooks(event *hook.HookEvent) {
 	for _, h := range s.hooks {
-		if !s.checkHookExcluded(h, evt) {
-			s.context = h.Before(s.context, evt)
+		if !s.checkHookExcluded(h, event) {
+			s.context = h.Before(s.context, event)
 		}
 	}
 }
 
-func (s *HookableStatement) applyAfterHooks(evt *hook.HookEvent) {
+func (s *HookableStatement) applyAfterHooks(event *hook.HookEvent) {
 	for _, h := range s.hooks {
-		if !s.checkHookExcluded(h, evt) {
-			h.After(s.context, evt)
+		if !s.checkHookExcluded(h, event) {
+			h.After(s.context, event)
 		}
 	}
 }
 
-func (s *HookableStatement) checkHookExcluded(h hook.Hook, evt *hook.HookEvent) bool {
-	for _, exclusion := range h.Exclusions() {
-		if evt.Name() == exclusion {
+func (s *HookableStatement) checkHookExcluded(h hook.Hook, event *hook.HookEvent) bool {
+	for _, operation := range h.ExcludedOperation() {
+		if event.Operation() == operation {
 			return true
 		}
 	}

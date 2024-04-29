@@ -30,7 +30,9 @@ func (t *HookableTransaction) Commit() error {
 
 	t.applyBeforeHooks(event)
 
+	event.Start()
 	err := t.base.Commit()
+	event.Stop()
 	if err != nil {
 		event.SetError(err)
 	}
@@ -45,7 +47,9 @@ func (t *HookableTransaction) Rollback() error {
 
 	t.applyBeforeHooks(event)
 
+	event.Start()
 	err := t.base.Rollback()
+	event.Stop()
 	if err != nil {
 		event.SetError(err)
 	}
@@ -55,25 +59,25 @@ func (t *HookableTransaction) Rollback() error {
 	return err
 }
 
-func (t *HookableTransaction) applyBeforeHooks(evt *hook.HookEvent) {
+func (t *HookableTransaction) applyBeforeHooks(event *hook.HookEvent) {
 	for _, h := range t.hooks {
-		if !t.checkHookExcluded(h, evt) {
-			t.context = h.Before(t.context, evt)
+		if !t.checkHookExcluded(h, event) {
+			t.context = h.Before(t.context, event)
 		}
 	}
 }
 
-func (t *HookableTransaction) applyAfterHooks(evt *hook.HookEvent) {
+func (t *HookableTransaction) applyAfterHooks(event *hook.HookEvent) {
 	for _, h := range t.hooks {
-		if !t.checkHookExcluded(h, evt) {
-			h.After(t.context, evt)
+		if !t.checkHookExcluded(h, event) {
+			h.After(t.context, event)
 		}
 	}
 }
 
-func (t *HookableTransaction) checkHookExcluded(h hook.Hook, evt *hook.HookEvent) bool {
-	for _, exclusion := range h.Exclusions() {
-		if evt.Name() == exclusion {
+func (t *HookableTransaction) checkHookExcluded(h hook.Hook, event *hook.HookEvent) bool {
+	for _, operation := range h.ExcludedOperation() {
+		if event.Operation() == operation {
 			return true
 		}
 	}

@@ -20,7 +20,7 @@ func NewTraceHook() *TraceHook {
 	return &TraceHook{}
 }
 
-func (h *TraceHook) Exclusions() []string {
+func (h *TraceHook) ExcludedOperation() []string {
 	return []string{
 		"Connection::Ping",
 		"Connection::ResetSession",
@@ -46,7 +46,7 @@ func (h *TraceHook) Before(ctx context.Context, event *hook.HookEvent) context.C
 
 	ctx, _ = trace.CtxTracerProvider(ctx).Tracer("yokai-sql").Start(
 		ctx,
-		event.Name(),
+		event.Operation(),
 		oteltrace.WithSpanKind(oteltrace.SpanKindClient),
 		oteltrace.WithAttributes(attributes...),
 	)
@@ -70,6 +70,7 @@ func (h *TraceHook) After(ctx context.Context, event *hook.HookEvent) {
 	span.SetStatus(code, code.String())
 
 	span.SetAttributes(
+		attribute.String("db.latency", event.Latency().String()),
 		attribute.Int64("db.lastInsertId", event.LastInsertId()),
 		attribute.Int64("db.rowsAffected", event.RowsAffected()),
 	)

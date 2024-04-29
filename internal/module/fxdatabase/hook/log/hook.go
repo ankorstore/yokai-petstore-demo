@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql/driver"
 	"errors"
-	"time"
 
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook"
 	"github.com/ankorstore/yokai/log"
@@ -16,7 +15,7 @@ func NewLogHook() *LogHook {
 	return &LogHook{}
 }
 
-func (h *LogHook) Exclusions() []string {
+func (h *LogHook) ExcludedOperation() []string {
 	return []string{
 		"Connection::Ping",
 		"Connection::ResetSession",
@@ -28,8 +27,6 @@ func (h *LogHook) Before(ctx context.Context, _ *hook.HookEvent) context.Context
 }
 
 func (h *LogHook) After(ctx context.Context, event *hook.HookEvent) {
-	latency := time.Since(event.Timestamp())
-
 	logger := log.CtxLogger(ctx)
 
 	loggerEvent := logger.Info()
@@ -39,7 +36,9 @@ func (h *LogHook) After(ctx context.Context, event *hook.HookEvent) {
 		}
 	}
 
-	loggerEvent.Str("operation", event.Name()).Str("latency", latency.String())
+	loggerEvent.
+		Str("operation", event.Operation()).
+		Str("latency", event.Latency().String())
 
 	if event.Query() != "" {
 		loggerEvent.Str("query", event.Query())
