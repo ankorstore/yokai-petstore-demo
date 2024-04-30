@@ -61,26 +61,12 @@ func (t *HookableTransaction) Rollback() error {
 
 func (t *HookableTransaction) applyBeforeHooks(event *hook.HookEvent) {
 	for _, h := range t.hooks {
-		if !t.checkHookExcluded(h, event) {
-			t.context = h.Before(t.context, event)
-		}
+		t.context = h.Before(t.context, event)
 	}
 }
 
 func (t *HookableTransaction) applyAfterHooks(event *hook.HookEvent) {
 	for _, h := range t.hooks {
-		if !t.checkHookExcluded(h, event) {
-			h.After(t.context, event)
-		}
+		h.After(t.context, event)
 	}
-}
-
-func (t *HookableTransaction) checkHookExcluded(h hook.Hook, event *hook.HookEvent) bool {
-	for _, operation := range h.ExcludedOperations() {
-		if event.Operation() == operation {
-			return true
-		}
-	}
-
-	return false
 }

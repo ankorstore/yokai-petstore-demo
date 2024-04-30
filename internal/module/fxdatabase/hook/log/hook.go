@@ -7,19 +7,26 @@ import (
 
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook"
 	"github.com/ankorstore/yokai/log"
+	"github.com/rs/zerolog"
 )
 
-type LogHook struct{}
+type LogHook struct {
+	options Options
+}
 
-func NewLogHook() *LogHook {
-	return &LogHook{}
+func NewLogHook(options ...LogHookOption) *LogHook {
+	appliedOpts := DefaultLogHookOptions()
+	for _, applyOpt := range options {
+		applyOpt(&appliedOpts)
+	}
+
+	return &LogHook{
+		options: appliedOpts,
+	}
 }
 
 func (h *LogHook) ExcludedOperations() []string {
-	return []string{
-		"Connection::Ping",
-		"Connection::ResetSession",
-	}
+	return h.options.ExcludedOperations
 }
 
 func (h *LogHook) Before(ctx context.Context, _ *hook.HookEvent) context.Context {
@@ -27,9 +34,22 @@ func (h *LogHook) Before(ctx context.Context, _ *hook.HookEvent) context.Context
 }
 
 func (h *LogHook) After(ctx context.Context, event *hook.HookEvent) {
+	if hook.Contains(h.options.ExcludedOperations, event.Operation()) {
+		return
+	}
+
 	logger := log.CtxLogger(ctx)
 
-	loggerEvent := logger.Info()
+	var loggerEvent *zerolog.Event
+	switch h.options.Level {
+	case zerolog.DebugLevel:
+		loggerEvent = logger.Debug()
+	case zerolog.WarnLevel:
+		loggerEvent = logger.Warn()
+	default:
+		loggerEvent = logger.Info()
+	}
+
 	if event.Error() != nil {
 		if !errors.Is(event.Error(), driver.ErrSkip) {
 			loggerEvent = logger.Error().Err(event.Error())
@@ -44,7 +64,7 @@ func (h *LogHook) After(ctx context.Context, event *hook.HookEvent) {
 		loggerEvent.Str("query", event.Query())
 	}
 
-	if event.Arguments() != nil {
+	if h.options.Arguments && event.Arguments() != nil {
 		loggerEvent.Interface("arguments", event.Arguments())
 	}
 

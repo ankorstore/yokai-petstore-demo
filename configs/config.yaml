@@ -57,11 +57,21 @@ modules:
           request_path: true
           response_status: true
   database:
-    #driver: sqlite
-    #dsn: "file:database.sqlite"
     driver: mysql
     dsn: ${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:${MYSQL_PORT})/${MYSQL_DATABASE}?parseTime=true
     migrations: db/migrations
+    log:
+      enabled: true      # to enable SQl logging
+      arguments: false   # with SQL arguments as dedicated log field
+      exclude:           # and some SQL operations exclusions from logging
+        - "Connection::Ping"
+        - "Connection::ResetSession"
+    trace:
+      enabled: true     # to enable SQl tracing
+      arguments: true   # with SQL arguments as dedicated span attribute
+      exclude:          # and some SQL operations exclusions from tracing
+        - "Connection::Ping"
+        - "Connection::ResetSession"
   log:
     level: info
     output: stdout

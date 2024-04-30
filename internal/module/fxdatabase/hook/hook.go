@@ -6,7 +6,6 @@ import (
 )
 
 type Hook interface {
-	ExcludedOperations() []string
 	Before(context.Context, *HookEvent) context.Context
 	After(context.Context, *HookEvent)
 }

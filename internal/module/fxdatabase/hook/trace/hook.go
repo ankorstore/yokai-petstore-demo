@@ -14,20 +14,26 @@ import (
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
-type TraceHook struct{}
-
-func NewTraceHook() *TraceHook {
-	return &TraceHook{}
+type TraceHook struct {
+	options Options
 }
 
-func (h *TraceHook) ExcludedOperations() []string {
-	return []string{
-		"Connection::Ping",
-		"Connection::ResetSession",
+func NewTraceHook(options ...TraceHookOption) *TraceHook {
+	appliedOpts := DefaultTraceHookOptions()
+	for _, applyOpt := range options {
+		applyOpt(&appliedOpts)
+	}
+
+	return &TraceHook{
+		options: appliedOpts,
 	}
 }
 
 func (h *TraceHook) Before(ctx context.Context, event *hook.HookEvent) context.Context {
+	if hook.Contains(h.options.ExcludedOperations, event.Operation()) {
+		return ctx
+	}
+
 	var attributes []attribute.KeyValue
 
 	if event.Query() != "" {
@@ -37,7 +43,7 @@ func (h *TraceHook) Before(ctx context.Context, event *hook.HookEvent) context.C
 		)
 	}
 
-	if event.Arguments() != nil {
+	if h.options.Arguments && event.Arguments() != nil {
 		attributes = append(
 			attributes,
 			attribute.String("db.statement.arguments", fmt.Sprintf("%+v", event.Arguments())),
@@ -55,6 +61,10 @@ func (h *TraceHook) Before(ctx context.Context, event *hook.HookEvent) context.C
 }
 
 func (h *TraceHook) After(ctx context.Context, event *hook.HookEvent) {
+	if hook.Contains(h.options.ExcludedOperations, event.Operation()) {
+		return
+	}
+
 	span := oteltrace.SpanFromContext(ctx)
 	if !span.IsRecording() {
 		return

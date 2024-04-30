@@ -289,9 +289,7 @@ func (c *HookableConnection) ResetSession(ctx context.Context) error {
 
 func (c *HookableConnection) applyBeforeHooks(ctx context.Context, event *hook.HookEvent) context.Context {
 	for _, h := range c.hooks {
-		if !c.checkHookExcluded(h, event) {
-			ctx = h.Before(ctx, event)
-		}
+		ctx = h.Before(ctx, event)
 	}
 
 	return ctx
@@ -299,18 +297,6 @@ func (c *HookableConnection) applyBeforeHooks(ctx context.Context, event *hook.H
 
 func (c *HookableConnection) applyAfterHooks(ctx context.Context, event *hook.HookEvent) {
 	for _, h := range c.hooks {
-		if !c.checkHookExcluded(h, event) {
-			h.After(ctx, event)
-		}
+		h.After(ctx, event)
 	}
-}
-
-func (c *HookableConnection) checkHookExcluded(h hook.Hook, event *hook.HookEvent) bool {
-	for _, operation := range h.ExcludedOperations() {
-		if event.Operation() == operation {
-			return true
-		}
-	}
-
-	return false
 }

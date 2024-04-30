@@ -40,17 +40,39 @@ type FxDatabaseParam struct {
 }
 
 func NewFxDatabase(p FxDatabaseParam) (*sql.DB, error) {
-	driverName, err := RegisterDriver(
-		p.Config.GetString("modules.database.driver"),
-		[]hook.Hook{
-			tracehook.NewTraceHook(),
-			loghook.NewLogHook(),
-		},
-	)
+	// hooks
+	var driverHooks []hook.Hook
+
+	// trace hook
+	if p.Config.GetBool("modules.database.trace.enabled") {
+		driverHooks = append(
+			driverHooks,
+			tracehook.NewTraceHook(
+				tracehook.WithArguments(p.Config.GetBool("modules.database.trace.arguments")),
+				tracehook.WithExcludedOperations(p.Config.GetStringSlice("modules.database.trace.exclude")...),
+			),
+		)
+	}
+
+	// log hook
+	if p.Config.GetBool("modules.database.log.enabled") {
+		driverHooks = append(
+			driverHooks,
+			loghook.NewLogHook(
+				loghook.WithLevel(p.Config.GetString("modules.database.log.level")),
+				loghook.WithArguments(p.Config.GetBool("modules.database.log.arguments")),
+				loghook.WithExcludedOperations(p.Config.GetStringSlice("modules.database.log.exclude")...),
+			),
+		)
+	}
+
+	// driver registration
+	driverName, err := RegisterDriver(p.Config.GetString("modules.database.driver"), driverHooks...)
 	if err != nil {
 		return nil, err
 	}
 
+	// database
 	db, err := sql.Open(driverName, p.Config.GetString("modules.database.dsn"))
 	if err != nil {
 		return nil, err

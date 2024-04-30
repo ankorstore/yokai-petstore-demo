@@ -64,7 +64,7 @@ func (r *DriverRegistry) Get(driverName string) (driver.Driver, error) {
 	return registeredDriver, nil
 }
 
-func RegisterDriver(driverName string, hooks []hook.Hook) (string, error) {
+func RegisterDriver(driverName string, hooks ...hook.Hook) (string, error) {
 	driverRegistrationName := fmt.Sprintf("%s-%s", DriverNamePrefix, driverName)
 
 	if RegisteredDrivers.Has(driverRegistrationName) {

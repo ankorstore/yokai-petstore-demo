@@ -83,26 +83,12 @@ func (s *HookableStatement) Query(args []driver.Value) (driver.Rows, error) {
 
 func (s *HookableStatement) applyBeforeHooks(event *hook.HookEvent) {
 	for _, h := range s.hooks {
-		if !s.checkHookExcluded(h, event) {
-			s.context = h.Before(s.context, event)
-		}
+		s.context = h.Before(s.context, event)
 	}
 }
 
 func (s *HookableStatement) applyAfterHooks(event *hook.HookEvent) {
 	for _, h := range s.hooks {
-		if !s.checkHookExcluded(h, event) {
-			h.After(s.context, event)
-		}
+		h.After(s.context, event)
 	}
-}
-
-func (s *HookableStatement) checkHookExcluded(h hook.Hook, event *hook.HookEvent) bool {
-	for _, operation := range h.ExcludedOperations() {
-		if event.Operation() == operation {
-			return true
-		}
-	}
-
-	return false
 }
