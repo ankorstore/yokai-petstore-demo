@@ -57,6 +57,7 @@ func (h *LogHook) After(ctx context.Context, event *hook.HookEvent) {
 	}
 
 	loggerEvent.
+		Str("driver", event.Driver()).
 		Str("operation", event.Operation()).
 		Str("latency", event.Latency().String())
 

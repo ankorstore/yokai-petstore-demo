@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/driver/mysql"
+	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/driver/postgres"
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/driver/sqlite"
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook"
 )
@@ -74,9 +75,11 @@ func RegisterDriver(driverName string, hooks ...hook.Hook) (string, error) {
 	var hookableDriver *HookableDriver
 	switch FetchDriver(driverName) {
 	case Mysql:
-		hookableDriver = NewHookableDriver(driverName, mysql.NewBaseDriver(), hooks)
+		hookableDriver = NewHookableDriver(mysql.NewBaseDriver(), NewConfiguration(driverName, hooks...))
+	case Postgres:
+		hookableDriver = NewHookableDriver(postgres.NewBaseDriver(), NewConfiguration(driverName, hooks...))
 	case Sqlite:
-		hookableDriver = NewHookableDriver(driverName, sqlite.NewBaseDriver(), hooks)
+		hookableDriver = NewHookableDriver(sqlite.NewBaseDriver(), NewConfiguration(driverName, hooks...))
 	default:
 		return "", fmt.Errorf("unsupported driver")
 	}

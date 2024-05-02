@@ -11,6 +11,7 @@ type Hook interface {
 }
 
 type HookEvent struct {
+	driver       string
 	operation    string
 	query        string
 	arguments    any
@@ -21,8 +22,9 @@ type HookEvent struct {
 	stoppedAt    time.Time
 }
 
-func NewHookEvent(operation string, query string, arguments interface{}) *HookEvent {
+func NewHookEvent(driver string, operation string, query string, arguments interface{}) *HookEvent {
 	return &HookEvent{
+		driver:    driver,
 		operation: operation,
 		query:     query,
 		arguments: arguments,
@@ -43,6 +45,10 @@ func (e *HookEvent) Stop() *HookEvent {
 
 func (e *HookEvent) Latency() time.Duration {
 	return e.stoppedAt.Sub(e.startedAt)
+}
+
+func (e *HookEvent) Driver() string {
+	return e.driver
 }
 
 func (e *HookEvent) Operation() string {

@@ -8,22 +8,22 @@ import (
 )
 
 type HookableStatement struct {
-	base    driver.Stmt
-	context context.Context
-	query   string
-	hooks   []hook.Hook
+	base          driver.Stmt
+	context       context.Context
+	query         string
+	configuration *Configuration
 }
 
-func NewHookableStatement(base driver.Stmt, ctx context.Context, query string, hooks []hook.Hook) *HookableStatement {
+func NewHookableStatement(base driver.Stmt, ctx context.Context, query string, configuration *Configuration) *HookableStatement {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
 	return &HookableStatement{
-		base:    base,
-		context: ctx,
-		query:   query,
-		hooks:   hooks,
+		base:          base,
+		context:       ctx,
+		query:         query,
+		configuration: configuration,
 	}
 }
 
@@ -36,7 +36,7 @@ func (s *HookableStatement) NumInput() int {
 }
 
 func (s *HookableStatement) Exec(args []driver.Value) (driver.Result, error) {
-	event := hook.NewHookEvent("Statement::Exec", s.query, args)
+	event := hook.NewHookEvent(s.configuration.Driver(), "Statement::Exec", s.query, args)
 
 	s.applyBeforeHooks(event)
 
@@ -65,7 +65,7 @@ func (s *HookableStatement) Exec(args []driver.Value) (driver.Result, error) {
 }
 
 func (s *HookableStatement) Query(args []driver.Value) (driver.Rows, error) {
-	event := hook.NewHookEvent("Statement::Query", s.query, args)
+	event := hook.NewHookEvent(s.configuration.Driver(), "Statement::Query", s.query, args)
 
 	s.applyBeforeHooks(event)
 
@@ -82,13 +82,13 @@ func (s *HookableStatement) Query(args []driver.Value) (driver.Rows, error) {
 }
 
 func (s *HookableStatement) applyBeforeHooks(event *hook.HookEvent) {
-	for _, h := range s.hooks {
+	for _, h := range s.configuration.Hooks() {
 		s.context = h.Before(s.context, event)
 	}
 }
 
 func (s *HookableStatement) applyAfterHooks(event *hook.HookEvent) {
-	for _, h := range s.hooks {
+	for _, h := range s.configuration.Hooks() {
 		h.After(s.context, event)
 	}
 }

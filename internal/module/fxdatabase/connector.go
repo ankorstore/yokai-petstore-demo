@@ -29,7 +29,7 @@ func (c *HookableConnector) Connect(ctx context.Context) (driver.Conn, error) {
 		return nil, err
 	}
 
-	return NewHookableConnection(conn, c.driver.hooks), nil
+	return NewHookableConnection(conn, c.driver.Configuration()), nil
 }
 
 func (c *HookableConnector) Driver() driver.Driver {

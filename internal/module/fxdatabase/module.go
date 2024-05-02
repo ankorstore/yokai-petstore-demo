@@ -14,6 +14,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
 	mysqlmigrate "github.com/golang-migrate/migrate/v4/database/mysql"
+	postgresmigrate "github.com/golang-migrate/migrate/v4/database/postgres"
 	sqlite3migrate "github.com/golang-migrate/migrate/v4/database/sqlite3"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/mattn/go-sqlite3"
@@ -103,10 +104,15 @@ func NewFxDatabaseMigrator(p FxDatabaseMigratorParam) (*migrate.Migrate, error) 
 	var driver database.Driver
 	var err error
 
-	if p.Config.GetString("modules.database.driver") == "sqlite" {
+	switch p.Config.GetString("modules.database.driver") {
+	case "sqlite":
 		driver, err = sqlite3migrate.WithInstance(p.Db, &sqlite3migrate.Config{})
-	} else {
+	case "mysql":
 		driver, err = mysqlmigrate.WithInstance(p.Db, &mysqlmigrate.Config{})
+	case "postgres":
+		driver, err = postgresmigrate.WithInstance(p.Db, &postgresmigrate.Config{})
+	default:
+		return nil, fmt.Errorf("invalid migration driver")
 	}
 
 	if err != nil {
@@ -125,6 +131,8 @@ func NewFxDatabaseMigrator(p FxDatabaseMigratorParam) (*migrate.Migrate, error) 
 
 		return nil, err
 	}
+
+	fmt.Println("migrator up")
 
 	migrator.Log = NewMigrationLogger(p.Logger)
 

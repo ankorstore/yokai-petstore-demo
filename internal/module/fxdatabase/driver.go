@@ -2,26 +2,26 @@ package fxdatabase
 
 import (
 	"database/sql/driver"
-
-	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase/hook"
 )
 
 type HookableDriver struct {
-	name  string
-	base  driver.Driver
-	hooks []hook.Hook
+	base          driver.Driver
+	configuration *Configuration
 }
 
-func NewHookableDriver(name string, base driver.Driver, hooks []hook.Hook) *HookableDriver {
+func NewHookableDriver(base driver.Driver, configuration *Configuration) *HookableDriver {
 	return &HookableDriver{
-		name:  name,
-		base:  base,
-		hooks: hooks,
+		base:          base,
+		configuration: configuration,
 	}
 }
 
 func (d *HookableDriver) Name() string {
-	return d.name
+	return d.configuration.Driver()
+}
+
+func (d *HookableDriver) Configuration() *Configuration {
+	return d.configuration
 }
 
 func (d *HookableDriver) Open(dsn string) (driver.Conn, error) {
@@ -30,7 +30,7 @@ func (d *HookableDriver) Open(dsn string) (driver.Conn, error) {
 		return nil, err
 	}
 
-	return NewHookableConnection(connection, d.hooks), nil
+	return NewHookableConnection(connection, d.configuration), nil
 }
 
 func (d *HookableDriver) OpenConnector(dsn string) (driver.Connector, error) {

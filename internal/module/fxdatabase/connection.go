@@ -8,14 +8,14 @@ import (
 )
 
 type HookableConnection struct {
-	base  driver.Conn
-	hooks []hook.Hook
+	base          driver.Conn
+	configuration *Configuration
 }
 
-func NewHookableConnection(base driver.Conn, hooks []hook.Hook) *HookableConnection {
+func NewHookableConnection(base driver.Conn, configuration *Configuration) *HookableConnection {
 	return &HookableConnection{
-		base:  base,
-		hooks: hooks,
+		base:          base,
+		configuration: configuration,
 	}
 }
 
@@ -25,7 +25,7 @@ func (c *HookableConnection) Exec(query string, args []driver.Value) (driver.Res
 		return nil, driver.ErrSkip
 	}
 
-	event := hook.NewHookEvent("Connection::Exec", query, args)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::Exec", query, args)
 
 	ctx := c.applyBeforeHooks(context.Background(), event)
 
@@ -59,7 +59,7 @@ func (c *HookableConnection) ExecContext(ctx context.Context, query string, args
 		return nil, driver.ErrSkip
 	}
 
-	event := hook.NewHookEvent("Connection::ExecContext", query, args)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::ExecContext", query, args)
 
 	ctx = c.applyBeforeHooks(ctx, event)
 
@@ -93,7 +93,7 @@ func (c *HookableConnection) Query(query string, args []driver.Value) (driver.Ro
 		return nil, driver.ErrSkip
 	}
 
-	event := hook.NewHookEvent("Connection::Query", query, args)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::Query", query, args)
 
 	ctx := c.applyBeforeHooks(context.Background(), event)
 
@@ -115,7 +115,7 @@ func (c *HookableConnection) QueryContext(ctx context.Context, query string, arg
 		return nil, driver.ErrSkip
 	}
 
-	event := hook.NewHookEvent("Connection::QueryContext", query, args)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::QueryContext", query, args)
 
 	ctx = c.applyBeforeHooks(ctx, event)
 
@@ -137,7 +137,7 @@ func (c *HookableConnection) Ping(ctx context.Context) error {
 		return driver.ErrSkip
 	}
 
-	event := hook.NewHookEvent("Connection::Ping", "ping", nil)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::Ping", "ping", nil)
 
 	ctx = c.applyBeforeHooks(ctx, event)
 
@@ -154,7 +154,7 @@ func (c *HookableConnection) Ping(ctx context.Context) error {
 }
 
 func (c *HookableConnection) PrepareContext(ctx context.Context, query string) (driver.Stmt, error) {
-	event := hook.NewHookEvent("Connection::PrepareContext", query, nil)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::PrepareContext", query, nil)
 
 	ctx = c.applyBeforeHooks(ctx, event)
 
@@ -168,7 +168,7 @@ func (c *HookableConnection) PrepareContext(ctx context.Context, query string) (
 
 		c.applyAfterHooks(ctx, event)
 
-		return NewHookableStatement(stmt, ctx, query, c.hooks), err
+		return NewHookableStatement(stmt, ctx, query, c.configuration), err
 	} else {
 		event.Start()
 		stmt, err := c.base.Prepare(query)
@@ -179,12 +179,12 @@ func (c *HookableConnection) PrepareContext(ctx context.Context, query string) (
 
 		c.applyAfterHooks(ctx, event)
 
-		return NewHookableStatement(stmt, ctx, query, c.hooks), err
+		return NewHookableStatement(stmt, ctx, query, c.configuration), err
 	}
 }
 
 func (c *HookableConnection) Prepare(query string) (driver.Stmt, error) {
-	event := hook.NewHookEvent("Connection::Prepare", query, nil)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::Prepare", query, nil)
 
 	ctx := c.applyBeforeHooks(context.Background(), event)
 
@@ -197,11 +197,11 @@ func (c *HookableConnection) Prepare(query string) (driver.Stmt, error) {
 
 	c.applyAfterHooks(ctx, event)
 
-	return NewHookableStatement(stmt, nil, query, c.hooks), err
+	return NewHookableStatement(stmt, nil, query, c.configuration), err
 }
 
 func (c *HookableConnection) Begin() (driver.Tx, error) {
-	event := hook.NewHookEvent("Connection::Begin", "", nil)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::Begin", "", nil)
 
 	ctx := c.applyBeforeHooks(context.Background(), event)
 
@@ -214,11 +214,11 @@ func (c *HookableConnection) Begin() (driver.Tx, error) {
 
 	c.applyAfterHooks(ctx, event)
 
-	return NewHookableTransaction(tx, ctx, c.hooks), err
+	return NewHookableTransaction(tx, ctx, c.configuration), err
 }
 
 func (c *HookableConnection) BeginTx(ctx context.Context, opts driver.TxOptions) (driver.Tx, error) {
-	event := hook.NewHookEvent("Connection::BeginTx", "", nil)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::BeginTx", "", nil)
 
 	ctx = c.applyBeforeHooks(ctx, event)
 
@@ -232,7 +232,7 @@ func (c *HookableConnection) BeginTx(ctx context.Context, opts driver.TxOptions)
 
 		c.applyAfterHooks(ctx, event)
 
-		return NewHookableTransaction(tx, ctx, c.hooks), err
+		return NewHookableTransaction(tx, ctx, c.configuration), err
 	} else {
 		event.Start()
 		tx, err := c.base.Begin()
@@ -243,12 +243,12 @@ func (c *HookableConnection) BeginTx(ctx context.Context, opts driver.TxOptions)
 
 		c.applyAfterHooks(ctx, event)
 
-		return NewHookableTransaction(tx, ctx, c.hooks), err
+		return NewHookableTransaction(tx, ctx, c.configuration), err
 	}
 }
 
 func (c *HookableConnection) Close() error {
-	event := hook.NewHookEvent("Connection::Close", "", nil)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::Close", "", nil)
 
 	ctx := c.applyBeforeHooks(context.Background(), event)
 
@@ -270,7 +270,7 @@ func (c *HookableConnection) ResetSession(ctx context.Context) error {
 		return driver.ErrSkip
 	}
 
-	event := hook.NewHookEvent("Connection::ResetSession", "", nil)
+	event := hook.NewHookEvent(c.configuration.Driver(), "Connection::ResetSession", "", nil)
 
 	ctx = c.applyBeforeHooks(context.Background(), event)
 
@@ -288,7 +288,7 @@ func (c *HookableConnection) ResetSession(ctx context.Context) error {
 }
 
 func (c *HookableConnection) applyBeforeHooks(ctx context.Context, event *hook.HookEvent) context.Context {
-	for _, h := range c.hooks {
+	for _, h := range c.configuration.Hooks() {
 		ctx = h.Before(ctx, event)
 	}
 
@@ -296,7 +296,7 @@ func (c *HookableConnection) applyBeforeHooks(ctx context.Context, event *hook.H
 }
 
 func (c *HookableConnection) applyAfterHooks(ctx context.Context, event *hook.HookEvent) {
-	for _, h := range c.hooks {
+	for _, h := range c.configuration.Hooks() {
 		h.After(ctx, event)
 	}
 }

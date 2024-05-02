@@ -34,7 +34,9 @@ func (h *TraceHook) Before(ctx context.Context, event *hook.HookEvent) context.C
 		return ctx
 	}
 
-	var attributes []attribute.KeyValue
+	attributes := []attribute.KeyValue{
+		semconv.DBSystemKey.String(event.Driver()),
+	}
 
 	if event.Query() != "" {
 		attributes = append(

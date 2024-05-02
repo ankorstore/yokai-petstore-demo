@@ -25,7 +25,7 @@ func (h *ExampleHandler) Handle() echo.HandlerFunc {
 		tx, err := h.db.BeginTx(ctx, nil)
 		defer tx.Rollback()
 
-		stmt, err := tx.PrepareContext(c.Request().Context(), "UPDATE pets SET name = ?")
+		stmt, err := tx.PrepareContext(c.Request().Context(), "UPDATE pets SET name = $1")
 		if err != nil {
 			return err
 		}

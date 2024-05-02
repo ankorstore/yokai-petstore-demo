@@ -34,6 +34,21 @@ services:
     env_file:
       - .env
 
+  petstore-demo-database2:
+    container_name: petstore-demo-database2
+    image: postgres
+    restart: always
+    networks:
+      - petstore-demo-network
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    volumes:
+      - petstore-demo-database2-data:/var/lib/mysql
+    env_file:
+      - .env
+
   petstore-demo-jaeger:
     container_name: petstore-demo-jaeger
     image: jaegertracing/all-in-one
@@ -47,6 +62,8 @@ services:
 
 volumes:
   petstore-demo-database-data:
+    driver: local
+  petstore-demo-database2-data:
     driver: local
 
 networks:

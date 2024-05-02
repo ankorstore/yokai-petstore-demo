@@ -8,25 +8,25 @@ import (
 )
 
 type HookableTransaction struct {
-	base    driver.Tx
-	context context.Context
-	hooks   []hook.Hook
+	base          driver.Tx
+	context       context.Context
+	configuration *Configuration
 }
 
-func NewHookableTransaction(base driver.Tx, ctx context.Context, hooks []hook.Hook) *HookableTransaction {
+func NewHookableTransaction(base driver.Tx, ctx context.Context, configuration *Configuration) *HookableTransaction {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 
 	return &HookableTransaction{
-		base:    base,
-		context: ctx,
-		hooks:   hooks,
+		base:          base,
+		context:       ctx,
+		configuration: configuration,
 	}
 }
 
 func (t *HookableTransaction) Commit() error {
-	event := hook.NewHookEvent("Transaction::Commit", "", nil)
+	event := hook.NewHookEvent(t.configuration.Driver(), "Transaction::Commit", "", nil)
 
 	t.applyBeforeHooks(event)
 
@@ -43,7 +43,7 @@ func (t *HookableTransaction) Commit() error {
 }
 
 func (t *HookableTransaction) Rollback() error {
-	event := hook.NewHookEvent("Transaction::Rollback", "", nil)
+	event := hook.NewHookEvent(t.configuration.Driver(), "Transaction::Rollback", "", nil)
 
 	t.applyBeforeHooks(event)
 
@@ -60,13 +60,13 @@ func (t *HookableTransaction) Rollback() error {
 }
 
 func (t *HookableTransaction) applyBeforeHooks(event *hook.HookEvent) {
-	for _, h := range t.hooks {
+	for _, h := range t.configuration.Hooks() {
 		t.context = h.Before(t.context, event)
 	}
 }
 
 func (t *HookableTransaction) applyAfterHooks(event *hook.HookEvent) {
-	for _, h := range t.hooks {
+	for _, h := range t.configuration.Hooks() {
 		h.After(t.context, event)
 	}
 }

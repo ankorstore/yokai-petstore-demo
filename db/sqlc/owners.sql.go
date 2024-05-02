@@ -14,7 +14,7 @@ const createOwner = `-- name: CreateOwner :execresult
 INSERT INTO owners (
     name, bio
 ) VALUES (
-    ?, ?
+    $1, $2
 )
 `
 
@@ -29,7 +29,7 @@ func (q *Queries) CreateOwner(ctx context.Context, arg CreateOwnerParams) (sql.R
 
 const deleteOwner = `-- name: DeleteOwner :exec
 DELETE FROM owners
-WHERE id = ?
+WHERE id = $1
 `
 
 func (q *Queries) DeleteOwner(ctx context.Context, id int32) error {
@@ -40,7 +40,7 @@ func (q *Queries) DeleteOwner(ctx context.Context, id int32) error {
 const getOwner = `-- name: GetOwner :one
 SELECT o.id, o.name, o.bio, COUNT(p.id) AS total_pets FROM owners AS o
 LEFT JOIN pets AS p ON o.id = p.owner_id
-WHERE o.id = ?
+WHERE o.id = $1
 GROUP BY o.id, o.name, o.bio
 LIMIT 1
 `
