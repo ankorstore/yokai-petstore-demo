@@ -9,7 +9,7 @@ import (
 
 	"github.com/ankorstore/yokai-petstore-demo/db/sqlc"
 	"github.com/ankorstore/yokai-petstore-demo/internal"
-	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase"
+	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxsql"
 	"github.com/ankorstore/yokai/log/logtest"
 	"github.com/ankorstore/yokai/trace/tracetest"
 	"github.com/labstack/echo/v4"
@@ -25,7 +25,7 @@ func TestListOwnersHandlerSuccess(t *testing.T) {
 
 	internal.RunTest(
 		t,
-		fxdatabase.RunFxDatabaseMigration(fxdatabase.Up, false),
+		fxsql.RunFxSQLDatabaseMigration("up", false),
 		fx.Populate(&httpServer, &logBuffer, &traceExporter, &querier),
 	)
 
@@ -53,7 +53,7 @@ func TestListOwnersHandlerSuccessAgain(t *testing.T) {
 
 	internal.RunTest(
 		t,
-		fxdatabase.RunFxDatabaseMigration(fxdatabase.Up, false),
+		fxsql.RunFxSQLDatabaseMigration("up", false),
 		fx.Populate(&httpServer, &logBuffer, &traceExporter, &querier),
 	)
 

@@ -14,7 +14,7 @@ const createOwnerPet = `-- name: CreateOwnerPet :execresult
 INSERT INTO pets (
     name, type, owner_id
 ) VALUES (
-   $1, $2, $3
+   ?, ?, ?
 )
 `
 
@@ -30,8 +30,8 @@ func (q *Queries) CreateOwnerPet(ctx context.Context, arg CreateOwnerPetParams) 
 
 const deleteOwnerPet = `-- name: DeleteOwnerPet :exec
 DELETE FROM pets
-WHERE owner_id = $1
-AND id = $2
+WHERE owner_id = ?
+AND id = ?
 `
 
 type DeleteOwnerPetParams struct {
@@ -46,8 +46,8 @@ func (q *Queries) DeleteOwnerPet(ctx context.Context, arg DeleteOwnerPetParams) 
 
 const getOwnerPet = `-- name: GetOwnerPet :one
 SELECT id, name, type, owner_id FROM pets
-WHERE owner_id = $1
-AND id = $2
+WHERE owner_id = ?
+AND id = ?
 LIMIT 1
 `
 
@@ -70,7 +70,7 @@ func (q *Queries) GetOwnerPet(ctx context.Context, arg GetOwnerPetParams) (Pet, 
 
 const listOwnerPets = `-- name: ListOwnerPets :many
 SELECT id, name, type, owner_id FROM pets
-WHERE owner_id = $1
+WHERE owner_id = ?
 ORDER BY id
 `
 

@@ -57,24 +57,23 @@ modules:
           request_path: true
           response_status: true
   database:
-    driver: postgres
-    #dsn: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
-    dsn: "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
-    #driver: mysql
-    #dsn: ${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:${MYSQL_PORT})/${MYSQL_DATABASE}?parseTime=true
+    #driver: postgres
+    #dsn: "host=${POSTGRES_HOST} port=${POSTGRES_PORT} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${POSTGRES_DB} sslmode=disable"
+    driver: mysql
+    dsn: ${MYSQL_USER}:${MYSQL_PASSWORD}@tcp(${MYSQL_HOST}:${MYSQL_PORT})/${MYSQL_DATABASE}?parseTime=true
     migrations: db/migrations
     log:
       enabled: true      # to enable SQl logging
       arguments: false   # with SQL arguments as dedicated log field
       exclude:           # and some SQL operations exclusions from logging
-        - "Connection::Ping"
-        - "Connection::ResetSession"
+        - "connection:ping"
+        - "connection:reset-session"
     trace:
       enabled: true     # to enable SQl tracing
       arguments: true   # with SQL arguments as dedicated span attribute
       exclude:          # and some SQL operations exclusions from tracing
-        - "Connection::Ping"
-        - "Connection::ResetSession"
+        - "connection:ping"
+        - "connection:reset-session"
   log:
     level: info
     output: stdout

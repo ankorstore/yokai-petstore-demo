@@ -26,17 +26,11 @@ test:
 lint:
 	golangci-lint run -v
 
-migrate-create:
-	docker run -v ./db/migrations:/migrations migrate/migrate create -ext sql -dir migrations -seq $(filter-out $@,$(MAKECMDGOALS))
-
-migrate-up:
-	docker compose exec petstore-demo-server go run . migrate up
-
-migrate-down:
-	docker compose exec petstore-demo-server go run . migrate down
+migrate:
+	docker compose exec petstore-demo-server go run . migrate $(filter-out $@,$(MAKECMDGOALS))
 
 sqlc:
-	docker run --rm -v ./:/src -w /src sqlc/sqlc $(filter-out $@,$(MAKECMDGOALS))
+	docker run --rm -u $$(id -u):$$(id -g) -v ./:/src -w /src sqlc/sqlc $(filter-out $@,$(MAKECMDGOALS))
 
 %:
     @:

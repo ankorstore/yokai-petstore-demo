@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase"
+	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxsql"
 	"github.com/ankorstore/yokai/fxcore"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/spf13/cobra"
@@ -23,9 +23,9 @@ var migrateCmd = &cobra.Command{
 			WithOptions(
 				fx.NopLogger,
 				// modules
-				fxdatabase.FxDatabaseModule,
+				fxsql.FxSQLModule,
 				// migration
-				fxdatabase.RunFxDatabaseMigration(fxdatabase.FetchMigrationDirection(args[0]), true),
+				fxsql.RunFxSQLDatabaseMigration(args[0], true),
 			).
 			RunApp()
 	},

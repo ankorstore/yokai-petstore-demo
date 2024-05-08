@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxdatabase"
+	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxsql"
 	"github.com/ankorstore/yokai-petstore-demo/internal/module/fxsqlc"
 	"github.com/ankorstore/yokai/fxcore"
 	"github.com/ankorstore/yokai/fxhttpserver"
@@ -23,7 +23,7 @@ var RootDir string
 var Bootstrapper = fxcore.NewBootstrapper().WithOptions(
 	// modules registration
 	fxhttpserver.FxHttpServerModule,
-	fxdatabase.FxDatabaseModule,
+	fxsql.FxSQLModule,
 	fxsqlc.FxSqlcModule,
 	// dependencies registration
 	Register(),
