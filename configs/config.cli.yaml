@@ -1,0 +1,8 @@
+app:
+  debug: true
+modules:
+  log:
+    output: noop
+  trace:
+    processor:
+      type: noop
